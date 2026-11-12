@@ -4,14 +4,16 @@ Throwaway app: `spike/` (`darnit-spike`). Installed SDK: `@devvit/web` 0.15.3, D
 0.15.3, Node 24.22. Results below are filled in from the phone checklist and from the app's
 `SPIKE {...}` log lines (`npx devvit logs <subreddit> darnit-spike`).
 
-**Status: playtest live in r/DarnItGame since 2026-11-12 22:08 UTC (v0.0.1.1), waiting on
-the phone checklist.** Rows marked "pending" have not been checked on a device yet.
+**Status: blocked.** The spike app was installed in r/DarnItGame on 2026-11-12 at 22:08 UTC
+(v0.0.1.1). About 40 minutes later Reddit reported the owner account as banned or
+suspended, before any row was checked on a device. No Devvit command has been run from the
+cloud session since. Rows marked "pending" are untested.
 
 ## Results
 
 | # | Spike | Passes when | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| 1 | Devvit CLI login and playtest from a Claude Code cloud session | The test post renders the app | Pass so far, pending David seeing the post render | `devvit login --copy-paste` logged in as the app owner and `devvit playtest r/DarnItGame` uploaded, installed and created post `t3_1xuqa0z`, all from the cloud session. Needs `NODE_USE_ENV_PROXY=1` |
+| 1 | Devvit CLI login and playtest from a Claude Code cloud session | The test post renders the app | Worked technically, then the account was suspended. Treat as failed | `devvit login --copy-paste` logged in as the app owner and `devvit playtest r/DarnItGame` uploaded, installed and created post `t3_1xuqa0z`, all from the cloud session. Needs `NODE_USE_ENV_PROXY=1`. The account was reported banned or suspended roughly 40 minutes after this login. The cause is not confirmed, but a full-access login from a cloud datacenter address is a plausible trigger |
 | 2 | Clipboard copy on Reddit iOS, Android and desktop | A Copy tap puts the share text on the clipboard | Pending | |
 | 3 | Drag performance in expanded mode on a mid-range Android | 60 fps drawing, page never scrolls | Pending | Headless Chromium only so far: 60 fps, no scroll. Says nothing about a phone |
 | 4 | Scheduler posts at a fixed UTC time | Post appears within a minute of 01:00 UTC | Pending | |
@@ -52,6 +54,13 @@ Bonus card 7 shows the player's snoovatar from `context.snoovatar` and from
 | Not mentioned | Node 24 is required by the template and docs | Add to the agent setup line |
 | Not mentioned | `permissions.journeys: true` must be set in `devvit.json` for Journeys telemetry | Add to the Journeys section |
 | Leaderboard rows show snoovatars | `context.snoovatar` covers the current player only. Other players need `reddit.getSnoovatarUrl(username)`, one call each | Store each solver's snoovatar URL in Redis at solve time and read rows from there |
+
+### From the account suspension
+
+| SPEC.md says | What happened | Change to SPEC.md |
+| --- | --- | --- |
+| Day-1 spike: log in and playtest from a Claude Code cloud session | The owner account was suspended shortly after the cloud login | Take the fallback: run `devvit login`, `upload` and `playtest` only on David's machine. The cloud session writes code and reads results David pastes back |
+| App named darnit | `darnit` is already registered by someone else | Pick another slug, for example `darnit-game`. Players still see "DarnIt!" |
 
 ### Depends on the phone results
 
