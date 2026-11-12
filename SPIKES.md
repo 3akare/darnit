@@ -4,14 +4,14 @@ Throwaway app: `spike/` (`darnit-spike`). Installed SDK: `@devvit/web` 0.15.3, D
 0.15.3, Node 24.22. Results below are filled in from the phone checklist and from the app's
 `SPIKE {...}` log lines (`npx devvit logs <subreddit> darnit-spike`).
 
-**Status: waiting on the first playtest.** Nothing below marked "pending" has been run on
-Reddit yet.
+**Status: playtest live in r/DarnItGame since 2026-11-12 22:08 UTC (v0.0.1.1), waiting on
+the phone checklist.** Rows marked "pending" have not been checked on a device yet.
 
 ## Results
 
 | # | Spike | Passes when | Result | Evidence |
 | --- | --- | --- | --- | --- |
-| 1 | Devvit CLI login and playtest from a Claude Code cloud session | The test post renders the app | Pending | Login URL issued with `--copy-paste`; waiting for the code |
+| 1 | Devvit CLI login and playtest from a Claude Code cloud session | The test post renders the app | Pass so far, pending David seeing the post render | `devvit login --copy-paste` logged in as the app owner and `devvit playtest r/DarnItGame` uploaded, installed and created post `t3_1xuqa0z`, all from the cloud session. Needs `NODE_USE_ENV_PROXY=1` |
 | 2 | Clipboard copy on Reddit iOS, Android and desktop | A Copy tap puts the share text on the clipboard | Pending | |
 | 3 | Drag performance in expanded mode on a mid-range Android | 60 fps drawing, page never scrolls | Pending | Headless Chromium only so far: 60 fps, no scroll. Says nothing about a phone |
 | 4 | Scheduler posts at a fixed UTC time | Post appears within a minute of 01:00 UTC | Pending | |
@@ -62,6 +62,12 @@ timezone, flair, comment attribution, font.
 
 - The React template is `reddit/devvit-template-react` at commit `97a03bb`. It ships Hono
   (not Express), React 19, Vite 8 and Tailwind 4.
+- In a cloud session the Devvit CLI must run with `NODE_USE_ENV_PROXY=1`. Without it the
+  login fails with "HTTP error 403: Forbidden" because Node's fetch skips the session proxy.
+- Cloud containers restart when idle, which kills a waiting `devvit login` prompt and a
+  running `devvit playtest`. The installed app version stays on the subreddit.
+- The first upload of a new app auto-creates a private test subreddit
+  (`r/darnit_spike_dev`) even when a playtest subreddit is given. It is unused.
 - `devvit publish` is never run. The template's `launch` script was removed from
   `package.json`.
 - Clean-up when the spikes are settled: run the "Spike: delete all spike posts" menu action

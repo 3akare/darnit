@@ -25,7 +25,9 @@ for what to build. `SPIKES.md` records what the platform actually allows.
 ## Commands
 
 Node 24 is required (`.nvmrc`). In Claude Code cloud sessions run
-`export PATH=/opt/node24/bin:$PATH` first; the default there is Node 22.
+`export PATH=/opt/node24/bin:$PATH NODE_USE_ENV_PROXY=1` first. The default there is
+Node 22, and without `NODE_USE_ENV_PROXY=1` every Devvit CLI network call fails with
+"HTTP error 403: Forbidden", because Node's fetch bypasses the session proxy.
 
 - `npm run dev`: playtest on Reddit (`devvit playtest`), rebuilding on save
 - `npm run build`: build client and server with Vite
