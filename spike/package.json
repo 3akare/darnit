@@ -1,0 +1,42 @@
+{
+  "private": true,
+  "name": "darnit-spike",
+  "version": "0.0.0",
+  "license": "BSD-3-Clause",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "devvit playtest",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "test:types": "tsc --build"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "dependencies": {
+    "@devvit/start": "0.15.3",
+    "@devvit/web": "0.15.3",
+    "@hono/node-server": "2.1.6",
+    "devvit": "0.15.3",
+    "hono": "4.13.17",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "@fontsource/space-grotesk": "5.3.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "^24.13.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "eslint": "10.14.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.7",
+    "globals": "17.14.0",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.2",
+    "vite": "8.3.7"
+  },
+  "description": "Throwaway Day-1 spike app for DarnIt! Delete this directory once SPIKES.md is settled."
+}

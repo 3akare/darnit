@@ -1,0 +1,73 @@
+{
+  "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
+  "name": "darnit-spike",
+  "post": {
+    "dir": "dist/client",
+    "entrypoints": {
+      "default": {
+        "entry": "splash.html",
+        "height": "regular"
+      },
+      "spike": {
+        "entry": "spike.html"
+      }
+    }
+  },
+  "server": {
+    "dir": "dist/server",
+    "entry": "index.cjs"
+  },
+  "permissions": {
+    "redis": true,
+    "reddit": {
+      "enable": true,
+      "asUser": ["SUBMIT_COMMENT"]
+    }
+  },
+  "menu": {
+    "items": [
+      {
+        "label": "Spike: create a spike post",
+        "description": "Manual fallback for the scheduler spike",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/post-create"
+      },
+      {
+        "label": "Spike: delete all spike posts",
+        "description": "Clean-up once the spikes are recorded",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/cleanup"
+      }
+    ]
+  },
+  "triggers": {
+    "onAppInstall": "/internal/triggers/on-app-install"
+  },
+  "scheduler": {
+    "tasks": {
+      "tick": {
+        "endpoint": "/internal/scheduler/tick",
+        "cron": "* * * * *"
+      },
+      "daily-post": {
+        "endpoint": "/internal/scheduler/cron-post",
+        "cron": "0 1 * * *",
+        "data": { "slot": "01:00" }
+      },
+      "soon-post": {
+        "endpoint": "/internal/scheduler/cron-post",
+        "cron": "30 23 * * *",
+        "data": { "slot": "23:30" }
+      },
+      "one-off": {
+        "endpoint": "/internal/scheduler/one-off"
+      }
+    }
+  },
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build"
+  }
+}
