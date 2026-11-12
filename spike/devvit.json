@@ -21,7 +21,9 @@
     "redis": true,
     "reddit": {
       "enable": true,
-      "asUser": ["SUBMIT_COMMENT"]
+      "asUser": [
+        "SUBMIT_COMMENT"
+      ]
     }
   },
   "menu": {
@@ -54,17 +56,24 @@
       "daily-post": {
         "endpoint": "/internal/scheduler/cron-post",
         "cron": "0 1 * * *",
-        "data": { "slot": "01:00" }
+        "data": {
+          "slot": "01:00"
+        }
       },
       "soon-post": {
         "endpoint": "/internal/scheduler/cron-post",
         "cron": "30 23 * * *",
-        "data": { "slot": "23:30" }
+        "data": {
+          "slot": "23:30"
+        }
       },
       "one-off": {
         "endpoint": "/internal/scheduler/one-off"
       }
     }
+  },
+  "dev": {
+    "subreddit": "DarnItGame"
   },
   "scripts": {
     "dev": "vite build --watch",
