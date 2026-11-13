@@ -1,7 +1,9 @@
 # DarnIt!
 
 A daily one-line puzzle for the Reddit Daily Games hackathon, built as a Devvit Web app
-named `darnit` (React client, Hono server, Devvit Redis). `SPEC.md` is the source of truth
+named `darnit` (React client, Hono server, Devvit Redis). The name `darnit` is already
+registered on Reddit by someone else, so `devvit.json` needs a new name (for example
+`darnit-game`) before the first upload. `SPEC.md` is the source of truth
 for what to build. `SPIKES.md` records what the platform actually allows.
 
 ## Rules
@@ -21,6 +23,10 @@ for what to build. `SPIKES.md` records what the platform actually allows.
 5. **No screen is done until David approves a phone screenshot.** A desktop or headless
    render does not count. When a screen is ready, ask David for a real phone screenshot and
    wait for his approval before ticking it off or calling it done.
+6. **Never run the Devvit CLI from a cloud session.** No `devvit login`, `upload`,
+   `playtest` or `logs` from Claude Code on the web. David's Reddit account was suspended
+   shortly after a cloud login (see `SPIKES.md`). Devvit commands run on David's machine
+   only; cloud sessions write code and test through the off-Reddit test page.
 
 ## Commands
 
@@ -35,7 +41,26 @@ Node 22, and without `NODE_USE_ENV_PROXY=1` every Devvit CLI network call fails 
 - `npm run lint`: ESLint
 - `npm run test:unit`: unit tests (`node --test` over `src/**/*.test.ts`)
 - `npm run deploy`: typecheck, lint, then `devvit upload` (private upload, not a publish)
-- `npx devvit login --copy-paste`: log in from a session with no local browser
+- `npm run bank:generate`: rebuild `src/server/bank/patterns.json` (fixed seed, so the
+  same code writes the same bank)
+- `npm run preview:dev`: serve the off-Reddit test page locally, reachable from a phone
+  on the same Wi-Fi
+- `npm run preview:build`: build the test page as one HTML file in `dist/preview`
+
+## Testing without Reddit
+
+`src/preview` runs the real client and the real server routes together in one page, with
+`@devvit/web/server` and `@devvit/web/client` swapped for local stand-ins (in-memory Redis
+saved to localStorage, one pretend player). It is published for David's phone as a private
+claude.ai Artifact: https://claude.ai/artifact/Mw5522wktXEUJPFJr7j8aY
+
+To update that page: `npm run preview:build`, then
+`node tools/make-test-page.mjs <file>.html`, then publish that file with the Artifact tool,
+passing the URL above as `url` so the link stays the same.
+
+The test page proves game logic and feel. It does not prove anything about Reddit's
+webview, so nothing in the Day-1 spikes table can be signed off from it. Its bundle
+contains the pattern solutions, which the real client must never receive.
 
 ## Layout
 
@@ -45,7 +70,13 @@ Node 22, and without `NODE_USE_ENV_PROXY=1` every Devvit CLI network call fails 
   in `devvit.json`.
 - `src/server`: Hono app in Devvit's serverless runtime. `redis`, `reddit`, `context`,
   `scheduler` come from `@devvit/web/server`.
-- `src/shared`: types shared by client and server
+- `src/shared`: code shared by client and server. `src/shared/puzzle` holds the rules
+  (`pattern.ts`), the solver, the generator and the drag logic (`stitching.ts`).
+- `src/server/core`: game logic written against a small `Store` type, so it runs on
+  Devvit Redis, in tests and in the test page. `src/server/routes` stays thin.
+- `src/server/bank`: the generated pattern bank and the daily picker
+- `src/preview`: the off-Reddit test page. Never imported by the app.
+- `tools/`: TypeScript configs, the bank generator script, test helpers
 - `spike/`: throwaway app (`darnit-spike`) for the Day-1 spikes. Never import from it.
   Delete it once `SPIKES.md` is settled.
 
@@ -74,4 +105,6 @@ Node 22, and without `NODE_USE_ENV_PROXY=1` every Devvit CLI network call fails 
 ## Code style
 
 - Type aliases over interfaces, named exports over default exports, no type casts.
+- Relative imports carry the `.ts` or `.tsx` extension, because the unit tests run the
+  source directly with Node.
 - Embroidery visuals are drawn in code (SVG or Canvas). No image files, no emoji as icons.

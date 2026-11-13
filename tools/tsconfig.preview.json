@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "../dist/types/preview",
+    "tsBuildInfoFile": "../dist/types/preview/tsconfig.tsbuildinfo",
+    "rootDir": "../src"
+  },
+  "include": [
+    "../src/preview/**/*",
+    "../src/client/**/*",
+    "../src/shared/**/*",
+    "../src/server/core/**/*",
+    "../src/server/bank/**/*",
+    "../src/server/routes/api.ts",
+    "../src/server/**/*.json"
+  ],
+  "exclude": [
+    "../src/**/*.test.ts",
+    "../src/server/core/daily.ts",
+    "../src/client/splash.tsx",
+    "../src/client/game.tsx"
+  ]
+}

@@ -1,5 +1,5 @@
-import '@fontsource/space-grotesk/500.css';
-import '@fontsource/space-grotesk/700.css';
+import '@fontsource/space-grotesk/latin-500.css';
+import '@fontsource/space-grotesk/latin-700.css';
 import './styles.css';
 
 import { StrictMode } from 'react';

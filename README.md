@@ -17,5 +17,8 @@ npx devvit login      # add --copy-paste when there is no local browser
 npm run dev           # playtest on Reddit
 ```
 
+While the Reddit account is unavailable, test with `npm run preview:dev`: the real client
+and server logic in one page, no Reddit needed.
+
 Other commands: `npm run build`, `npm run test:types`, `npm run lint`, `npm run test:unit`,
 `npm run deploy` (private upload). This app is never published with `devvit publish`.

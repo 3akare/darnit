@@ -65,6 +65,16 @@ image for an account with no custom avatar.
 | "Drag back over the thread to unpick it to that point" | When the thread's head touched any earlier part of the thread, everything after that point was cut. David: "terrible UX" | While dragging, the thread only unpicks one cell at a time, when the finger moves back onto the cell just behind the head. Touching any other part of the thread does nothing. Cutting back to an earlier cell needs a deliberate tap on it |
 | Leaderboard rows and the feed card show snoovatars | Neither `context.snoovatar` nor `reddit.getSnoovatarUrl` returned an image for David's account, which had no custom avatar | Always draw a stitched placeholder avatar in code, and show the snoovatar only when one exists |
 
+### From building the generator and the play screen
+
+| SPEC.md says | What was built | Change to SPEC.md |
+| --- | --- | --- |
+| "Redis holds the pattern bank" | The bank is a JSON file bundled with the server (90 patterns, 24 KB). Redis holds only which pattern ran on which day | Say the bank ships in the server bundle. Nothing to seed, and nothing is generated inside a request |
+| "Tap any earlier thread cell to cut back to it" | Kept, but only on a clean tap: press and release on the same cell. Pressing and then moving does nothing | Add "a clean tap" |
+| Rules list does not say what happens when a player steps on a button out of order | The step is refused, like stepping across a seam | Add it to Core rules |
+| Cross-stitch placement: interior only, never on a button | Also kept apart from each other (not touching, even diagonally), and placed so the two checkerboard colours balance; otherwise no thread can exist | Add both to the cross-stitch constraints |
+| Difficulty score calibrated against David's times | Score is computed, but its weights are a first guess and no pattern is rejected on it yet | Unchanged. Calibration still needs David's 20 boards per tier |
+
 ### From the account suspension
 
 | SPEC.md says | What happened | Change to SPEC.md |

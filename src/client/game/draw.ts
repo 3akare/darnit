@@ -209,7 +209,7 @@ export const drawScene = (
   ctx.lineJoin = 'round';
   const width = cell * 0.55;
 
-  // Thread: soft shadow, satin band, short diagonal stitches, 1px highlight.
+  // Thread: soft shadow, satin band, short diagonal stitches, a soft sheen.
   ctx.strokeStyle = 'rgba(0,0,0,0.20)';
   ctx.lineWidth = width + 2;
   tracePath(ctx, geo, thread, 0, 2);
@@ -240,9 +240,10 @@ export const drawScene = (
   }
   ctx.stroke();
   ctx.globalAlpha = 1;
-  ctx.strokeStyle = 'rgba(255,255,255,0.38)';
-  ctx.lineWidth = 1;
-  tracePath(ctx, geo, thread, -width * 0.22, -width * 0.22);
+  // Sheen along the middle of the band.
+  ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+  ctx.lineWidth = width * 0.3;
+  tracePath(ctx, geo, thread, 0, -width * 0.08);
   ctx.stroke();
 
   // New cell: the stitch pulls through in 80 ms with a small pop.

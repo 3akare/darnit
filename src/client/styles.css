@@ -13,6 +13,7 @@
   --button: #ffffff;
   --line: rgba(31, 27, 36, 0.2);
   --panel: #fffdf8;
+  --badge: #b8362c;
   --is-dark: 0;
 }
 @media (prefers-color-scheme: dark) {
@@ -29,7 +30,9 @@
     --button: #ffffff;
     --line: rgba(244, 239, 230, 0.24);
     --panel: #262b50;
+    --badge: #ff6f61;
     --is-dark: 1;
+    color-scheme: dark;
   }
 }
 :root[data-theme='dark'] {
@@ -45,7 +48,9 @@
   --button: #ffffff;
   --line: rgba(244, 239, 230, 0.24);
   --panel: #262b50;
+  --badge: #ff6f61;
   --is-dark: 1;
+  color-scheme: dark;
 }
 
 * {
@@ -133,13 +138,15 @@ button.primary {
 /* Play screen: fixed to the viewport. The fabric is the only gesture surface. */
 .play {
   position: relative;
-  height: 100dvh;
+  height: 100%;
   max-width: 560px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+  padding-block: 12px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
   overflow: hidden;
   overscroll-behavior: none;
   user-select: none;
@@ -209,9 +216,9 @@ footer.bar button {
 
 .solved {
   position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: calc(12px + env(safe-area-inset-bottom));
+  left: max(16px, env(safe-area-inset-left, 0px));
+  right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: 12px;
   padding: 16px 18px;
   background: var(--panel);
   border: 2px solid var(--text);
@@ -227,15 +234,7 @@ footer.bar button {
 }
 .badge {
   font-weight: 700;
-  color: var(--thread-dark);
-}
-:root[data-theme='dark'] .badge {
-  color: var(--thread);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) .badge {
-    color: var(--thread);
-  }
+  color: var(--badge);
 }
 .fine {
   font-size: 13px;

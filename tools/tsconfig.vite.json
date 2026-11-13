@@ -3,9 +3,14 @@
   "compilerOptions": {
     "outDir": "../dist/types/tools",
     "tsBuildInfoFile": "../dist/types/tools/tsconfig.vite.tsbuildinfo",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "rootDir": ".."
   },
-  "include": ["../vite.config.ts"],
+  "include": [
+    "../vite.config.ts",
+    "../vite.preview.config.ts"
+  ],
   "exclude": []
 }
