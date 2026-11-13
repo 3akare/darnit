@@ -240,15 +240,11 @@ export const generatePattern = (difficulty: Difficulty, rng: Rng, id: string): S
     if (clue.kind === 'button') {
       if (positions.size <= wanted) continue;
       positions.delete(clue.at);
-      const attempt = proveUnique(draft(), thread);
-      if (attempt.unique) proof = attempt;
-      else positions.add(clue.at);
+      if (!proveUnique(draft(), thread).unique) positions.add(clue.at);
     } else {
       if (seams.size <= wantedSeams) continue;
       seams.delete(clue.edge);
-      const attempt = proveUnique(draft(), thread);
-      if (attempt.unique) proof = attempt;
-      else seams.add(clue.edge);
+      if (!proveUnique(draft(), thread).unique) seams.add(clue.edge);
     }
   }
 

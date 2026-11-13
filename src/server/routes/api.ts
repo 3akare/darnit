@@ -1,93 +1,74 @@
-import { Hono } from 'hono';
-import { context, redis, reddit } from '@devvit/web/server';
-import type {
-  DecrementResponse,
-  IncrementResponse,
-  InitResponse,
-} from '../../shared/api';
+// Client-facing API. Thin on purpose: the rules live in ../core.
 
-type ErrorResponse = {
-  status: 'error';
-  message: string;
-};
+import { context, redis } from '@devvit/web/server';
+import { Hono } from 'hono';
+import type { HintRequest, HintResponse, StartResponse, SubmitRequest, SubmitResponse, TodayResponse } from '../../shared/api.ts';
+import { toPublic } from '../../shared/puzzle/pattern.ts';
+import { currentDay, dayForPost, nextResetAt, patternForDay } from '../core/days.ts';
+import { getRun, startRun, submitRun, takeHint } from '../core/runs.ts';
 
 export const api = new Hono();
 
-api.get('/init', async (c) => {
+/** The day and pattern behind the post this request came from. */
+const resolve = async () => {
   const { postId } = context;
+  if (!postId) return undefined;
+  const day = await dayForPost(redis, postId);
+  if (!day) return undefined;
+  const pattern = patternForDay(day);
+  if (!pattern) return undefined;
+  const today = await currentDay(redis);
+  return { day, pattern, isToday: today?.day === day.day };
+};
 
-  if (!postId) {
-    console.error('API Init Error: postId not found in devvit context');
-    return c.json<ErrorResponse>(
-      {
-        status: 'error',
-        message: 'postId is required but missing from context',
-      },
-      400
-    );
-  }
-
-  try {
-    const [count, username] = await Promise.all([
-      redis.get('count'),
-      reddit.getCurrentUsername(),
-    ]);
-
-    return c.json<InitResponse>({
-      type: 'init',
-      postId: postId,
-      count: count ? parseInt(count) : 0,
-      username: username ?? 'anonymous',
-    });
-  } catch (error) {
-    console.error(`API Init Error for post ${postId}:`, error);
-    let errorMessage = 'Unknown error during initialization';
-    if (error instanceof Error) {
-      errorMessage = `Initialization failed: ${error.message}`;
-    }
-    return c.json<ErrorResponse>(
-      { status: 'error', message: errorMessage },
-      400
-    );
-  }
+api.get('/today', async (c) => {
+  const found = await resolve();
+  if (!found) return c.json({ status: 'error', message: 'No pattern is attached to this post.' }, 404);
+  const now = Date.now();
+  const body: TodayResponse = {
+    day: found.day.day,
+    pattern: toPublic(found.pattern),
+    isToday: found.isToday,
+    username: context.username ?? null,
+    run: context.userId ? await getRun(redis, found.day.day, context.userId) : null,
+    serverNow: now,
+    nextResetAt: nextResetAt(now),
+  };
+  return c.json(body);
 });
 
-api.post('/increment', async (c) => {
-  const { postId } = context;
-  if (!postId) {
-    return c.json<ErrorResponse>(
-      {
-        status: 'error',
-        message: 'postId is required',
-      },
-      400
-    );
-  }
-
-  const count = await redis.incrBy('count', 1);
-  return c.json<IncrementResponse>({
-    count,
-    postId,
-    type: 'increment',
-  });
+api.post('/start', async (c) => {
+  const found = await resolve();
+  if (!found) return c.json<StartResponse>({ ok: false, reason: 'no-pattern' });
+  if (!context.userId) return c.json<StartResponse>({ ok: false, reason: 'logged-out' });
+  return c.json<StartResponse>(await startRun(redis, found.day.day, context.userId, Date.now()));
 });
 
-api.post('/decrement', async (c) => {
-  const { postId } = context;
-  if (!postId) {
-    return c.json<ErrorResponse>(
-      {
-        status: 'error',
-        message: 'postId is required',
-      },
-      400
-    );
-  }
+api.post('/hint', async (c) => {
+  const found = await resolve();
+  if (!found) return c.json<HintResponse>({ ok: false, reason: 'no-pattern' });
+  if (!context.userId) return c.json<HintResponse>({ ok: false, reason: 'logged-out' });
+  const { thread } = await c.req.json<HintRequest>();
+  return c.json<HintResponse>(
+    await takeHint(redis, found.day.day, context.userId, found.pattern, Array.isArray(thread) ? thread : [], Date.now())
+  );
+});
 
-  const count = await redis.incrBy('count', -1);
-  return c.json<DecrementResponse>({
-    count,
-    postId,
-    type: 'decrement',
-  });
+api.post('/submit', async (c) => {
+  const found = await resolve();
+  if (!found) return c.json<SubmitResponse>({ ok: false, reason: 'no-pattern' });
+  if (!context.userId) return c.json<SubmitResponse>({ ok: false, reason: 'logged-out' });
+  const { thread, unpicks } = await c.req.json<SubmitRequest>();
+  return c.json<SubmitResponse>(
+    await submitRun(
+      redis,
+      found.day.day,
+      context.userId,
+      found.pattern,
+      Array.isArray(thread) ? thread : [],
+      unpicks,
+      Date.now(),
+      found.isToday
+    )
+  );
 });

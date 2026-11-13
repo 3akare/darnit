@@ -5,8 +5,8 @@
     "dir": "dist/client",
     "entrypoints": {
       "default": {
-        "inline": true,
-        "entry": "splash.html"
+        "entry": "splash.html",
+        "height": "regular"
       },
       "game": {
         "entry": "game.html"
@@ -17,29 +17,30 @@
     "dir": "dist/server",
     "entry": "index.cjs"
   },
+  "permissions": {
+    "redis": true
+  },
   "menu": {
     "items": [
       {
-        "label": "Create a new post",
-        "description": "darnit",
+        "label": "DarnIt!: post today's pattern",
+        "description": "Manual fallback if the daily post is missing",
         "location": "subreddit",
         "forUserType": "moderator",
-        "endpoint": "/internal/menu/post-create"
-      },
-      {
-        "label": "Example form",
-        "description": "Show a simple form",
-        "location": "subreddit",
-        "forUserType": "moderator",
-        "endpoint": "/internal/menu/example-form"
+        "endpoint": "/internal/menu/daily-post"
       }
     ]
   },
-  "forms": {
-    "exampleForm": "/internal/form/example-submit"
-  },
   "triggers": {
     "onAppInstall": "/internal/triggers/on-app-install"
+  },
+  "scheduler": {
+    "tasks": {
+      "daily-post": {
+        "endpoint": "/internal/scheduler/daily-post",
+        "cron": "0 1 * * *"
+      }
+    }
   },
   "scripts": {
     "dev": "vite build --watch",

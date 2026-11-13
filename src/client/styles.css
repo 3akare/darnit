@@ -1,0 +1,248 @@
+/* Colour tokens from SPEC.md "Visual direction". Light by default, dark when the system or
+   an explicit data-theme asks for it. */
+:root {
+  --fabric: #f7f3ea;
+  --cloth: #efe9db;
+  --hole: rgba(0, 0, 0, 0.16);
+  --text: #1f1b24;
+  --thread: #ff5a4e;
+  --thread-dark: #b8362c;
+  --seam: #2b2730;
+  --hoop: #d9b48a;
+  --hoop-edge: #b98f63;
+  --button: #ffffff;
+  --line: rgba(31, 27, 36, 0.2);
+  --panel: #fffdf8;
+  --is-dark: 0;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --fabric: #1b1f3b;
+    --cloth: #262b50;
+    --hole: rgba(255, 255, 255, 0.16);
+    --text: #f4efe6;
+    --thread: #ff6f61;
+    --thread-dark: #a83a31;
+    --seam: #e9e2d6;
+    --hoop: #b98a5e;
+    --hoop-edge: #94693f;
+    --button: #ffffff;
+    --line: rgba(244, 239, 230, 0.24);
+    --panel: #262b50;
+    --is-dark: 1;
+  }
+}
+:root[data-theme='dark'] {
+  --fabric: #1b1f3b;
+  --cloth: #262b50;
+  --hole: rgba(255, 255, 255, 0.16);
+  --text: #f4efe6;
+  --thread: #ff6f61;
+  --thread-dark: #a83a31;
+  --seam: #e9e2d6;
+  --hoop: #b98a5e;
+  --hoop-edge: #94693f;
+  --button: #ffffff;
+  --line: rgba(244, 239, 230, 0.24);
+  --panel: #262b50;
+  --is-dark: 1;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+body {
+  background: var(--fabric);
+  color: var(--text);
+  font:
+    500 16px/1.35 'Space Grotesk',
+    system-ui,
+    sans-serif;
+  font-variant-numeric: tabular-nums;
+  -webkit-text-size-adjust: 100%;
+}
+button {
+  font: inherit;
+  font-weight: 700;
+  color: inherit;
+  background: var(--panel);
+  border: 2px solid var(--text);
+  border-radius: 12px;
+  padding: 10px 18px;
+  min-height: 46px;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+button.primary {
+  background: var(--thread);
+  color: #1f1b24;
+}
+.notice {
+  padding: 24px;
+  text-align: center;
+}
+
+/* Difficulty: one to three needles. */
+.needles {
+  display: inline-flex;
+  gap: 5px;
+  vertical-align: middle;
+}
+.needles i {
+  display: block;
+  width: 3px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--text);
+  transform: rotate(28deg);
+}
+
+/* Inline feed card: fits the post, nothing scrolls, taps only. */
+.card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  text-align: center;
+  overflow: hidden;
+}
+.card h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+}
+.card p {
+  margin: 0;
+}
+
+/* Play screen: fixed to the viewport. The fabric is the only gesture surface. */
+.play {
+  position: relative;
+  height: 100dvh;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+  overflow: hidden;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+}
+.timer {
+  font-size: 26px;
+  font-weight: 700;
+  min-width: 4ch;
+  text-align: center;
+}
+.stage {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+}
+.fabric {
+  display: block;
+  touch-action: none;
+}
+.status {
+  margin: 0;
+  text-align: center;
+  font-size: 14px;
+  min-height: 1.35em;
+}
+footer.bar button {
+  flex: 1;
+}
+
+/* Hint cooldown: a ring of thread fills round the button over five seconds. */
+@property --fill {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 360deg;
+}
+.hint.cooling {
+  opacity: 1;
+  border-color: transparent;
+  background:
+    linear-gradient(var(--panel), var(--panel)) padding-box,
+    conic-gradient(var(--thread) var(--fill), var(--line) 0) border-box;
+  animation: cooldown linear both;
+}
+@keyframes cooldown {
+  from {
+    --fill: 0deg;
+  }
+  to {
+    --fill: 360deg;
+  }
+}
+
+.solved {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  padding: 16px 18px;
+  background: var(--panel);
+  border: 2px solid var(--text);
+  border-radius: 16px;
+  text-align: center;
+}
+.solved h2 {
+  margin: 0;
+  font-size: 22px;
+}
+.solved p {
+  margin: 4px 0 0;
+}
+.badge {
+  font-weight: 700;
+  color: var(--thread-dark);
+}
+:root[data-theme='dark'] .badge {
+  color: var(--thread);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .badge {
+    color: var(--thread);
+  }
+}
+.fine {
+  font-size: 13px;
+  opacity: 0.8;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hint.cooling {
+    animation: none;
+  }
+}

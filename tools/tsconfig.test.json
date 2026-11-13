@@ -16,7 +16,8 @@
     "../src/server/bank/**/*",
     "../src/**/*.test.ts",
     "./*.ts",
-    "../src/server/**/*.json"
+    "../src/server/**/*.json",
+    "../src/server/core/**/*"
   ],
   "exclude": []
 }
