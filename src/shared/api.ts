@@ -15,6 +15,9 @@ export type RunView = {
   hintReadyAt: number;
 };
 
+/** Where a finished run places among today's solvers. */
+export type Standing = { rank: number; solvers: number };
+
 export type TodayResponse = {
   /** Pattern number, as in "DarnIt! #14". */
   day: number;
@@ -22,7 +25,10 @@ export type TodayResponse = {
   /** False on an older post: playable for practice, never counted. */
   isToday: boolean;
   username: string | null;
+  subredditName: string;
   run: RunView | null;
+  /** Set once the player has a counted finish today. */
+  standing: Standing | null;
   serverNow: number;
   nextResetAt: number;
 };
@@ -43,7 +49,7 @@ export type HintResponse =
 
 export type SubmitRequest = { thread: number[]; unpicks: number };
 export type SubmitResponse =
-  | { ok: true; timeMs: number; hints: number; unpicks: number; badge: Badge; counted: boolean }
+  | { ok: true; timeMs: number; hints: number; unpicks: number; badge: Badge; counted: boolean; standing: Standing | null }
   | { ok: false; reason: string };
 
 export const HINT_COOLDOWN_MS = 5000;
@@ -66,4 +72,47 @@ export const badgeLabel = (badge: Badge, unpicks: number): string => {
 export const formatTime = (ms: number): string => {
   const total = Math.floor(ms / 1000);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+};
+
+/** 1st, 2nd, 3rd, 4th, 11th, 12th, 13th, 21st ... */
+export const ordinal = (n: number): string => {
+  const tens = n % 100;
+  if (tens >= 11 && tens <= 13) return `${n}th`;
+  const suffix = ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th';
+  return `${n}${n % 10 > 3 ? 'th' : suffix}`;
+};
+
+/** Below this many solvers a percentage means little, so the line gives the rank instead. */
+export const PERCENTILE_FROM = 5;
+
+/**
+ * SPEC "Scoring, badges and leaderboard": "Faster than 75% of r/DarnItGame today", or
+ * "2nd of 4 today" while fewer than five have solved. Last place also gets the rank form,
+ * since "faster than 0%" reads badly.
+ */
+export const standingLine = (standing: Standing, subredditName: string): string => {
+  const { rank, solvers } = standing;
+  const faster = Math.round((100 * (solvers - rank)) / solvers);
+  if (solvers < PERCENTILE_FROM || faster <= 0) return `${ordinal(rank)} of ${solvers} today`;
+  return `Faster than ${faster}% of r/${subredditName} today`;
+};
+
+/** The copyable share text. It never shows the thread, so it cannot spoil the pattern. */
+export const shareText = (input: {
+  day: number;
+  timeMs: number;
+  badge: Badge;
+  unpicks: number;
+  standing: Standing | null;
+  subredditName: string;
+  /** Current streak in days, once streaks exist. */
+  streak?: number;
+}): string => {
+  const lines = [`DarnIt! #${input.day} · ${formatTime(input.timeMs)}`];
+  if (input.standing) lines.push(standingLine(input.standing, input.subredditName));
+  const last = [badgeLabel(input.badge, input.unpicks), input.streak ? `${input.streak}-day streak` : '']
+    .filter(Boolean)
+    .join(' · ');
+  if (last) lines.push(last);
+  return lines.join('\n');
 };

@@ -1,15 +1,10 @@
-// Small hand-made pieces: difficulty needles and stitched icons.
+// Small hand-made pieces: the difficulty label and stitched icons.
 
-/** One to three sewing needles: the pattern's difficulty. */
-export const Needles = ({ count, label }: { count: number; label: string }) => (
-  <span className="needles" role="img" aria-label={label}>
-    {Array.from({ length: count }, (_, i) => (
-      <svg key={i} width="11" height="30" viewBox="0 0 11 30" aria-hidden="true">
-        <path d="M5.5 29 L3.6 8 Q3.4 1.5 5.5 1.2 Q7.6 1.5 7.4 8 Z" fill="#1A191E" />
-        <ellipse cx="5.5" cy="5.6" rx="0.9" ry="2.4" fill="#FFFFFF" />
-      </svg>
-    ))}
-  </span>
+import type { Difficulty } from '../../shared/puzzle/pattern.ts';
+
+/** The pattern's difficulty, as a word. */
+export const Level = ({ difficulty }: { difficulty: Difficulty }) => (
+  <span className={`level ${difficulty}`}>{difficulty[0]?.toUpperCase() + difficulty.slice(1)}</span>
 );
 
 const ICONS = {

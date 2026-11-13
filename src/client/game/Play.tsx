@@ -2,19 +2,19 @@
 // Nothing else is on screen while playing, and nothing scrolls.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { HINT_COOLDOWN_MS, badgeFor, badgeLabel, formatTime } from '../../shared/api.ts';
+import { HINT_COOLDOWN_MS, badgeFor, formatTime } from '../../shared/api.ts';
 import type { SubmitResponse, TodayResponse } from '../../shared/api.ts';
 import { compile, isComplete } from '../../shared/puzzle/pattern.ts';
 import { createUnpickCounter, resetThread, undoStitch } from '../../shared/puzzle/stitching.ts';
 import type { Stitch } from '../../shared/puzzle/stitching.ts';
 
-const NEEDLES_FOR = { easy: 1, medium: 2, hard: 3 };
 import { askHint, startRun, submitThread } from '../api.ts';
 import { Board } from './Board.tsx';
-import { Icon, Needles } from './Craft.tsx';
+import { Icon, Level } from './Craft.tsx';
 import { Logo } from './Logo.tsx';
+import { ResultCard } from './ResultCard.tsx';
+import type { Result } from './ResultCard.tsx';
 
-type Result = { timeMs: number; hints: number; unpicks: number; counted: boolean; note: string };
 
 type Props = {
   today: TodayResponse;
@@ -38,7 +38,15 @@ export const Play = ({ today, skew }: Props) => {
   const [now, setNow] = useState(today.serverNow - skew);
   const [result, setResult] = useState<Result | null>(
     today.run?.finished && today.run.timeMs !== null
-      ? { timeMs: today.run.timeMs, hints: today.run.hints, unpicks: today.run.unpicks ?? 0, counted: today.isToday, note: '' }
+      ? {
+          timeMs: today.run.timeMs,
+          hints: today.run.hints,
+          unpicks: today.run.unpicks ?? 0,
+          badge: badgeFor(today.run.hints, today.run.unpicks ?? 0),
+          counted: today.isToday,
+          standing: today.standing,
+          note: '',
+        }
       : null
   );
   const [hint, setHint] = useState({ cell: -1, until: 0 });
@@ -64,7 +72,15 @@ export const Play = ({ today, skew }: Props) => {
       const unpicks = counter.current.count;
       const response: SubmitResponse | null = await submitThread(finalThread, unpicks).catch(() => null);
       if (response?.ok) {
-        setResult({ timeMs: response.timeMs, hints: response.hints, unpicks: response.unpicks, counted: response.counted, note: '' });
+        setResult({
+          timeMs: response.timeMs,
+          hints: response.hints,
+          unpicks: response.unpicks,
+          badge: response.badge,
+          counted: response.counted,
+          standing: response.standing,
+          note: '',
+        });
       } else {
         // Still show the solve; say plainly that it was not recorded.
         const why = response ? response.reason : 'offline';
@@ -72,7 +88,9 @@ export const Play = ({ today, skew }: Props) => {
           timeMs: localMs,
           hints: hints.current,
           unpicks,
+          badge: badgeFor(hints.current, unpicks),
           counted: false,
+          standing: null,
           note: why === 'logged-out' ? 'Log in to Reddit to save your time.' : `Not recorded (${why}).`,
         });
       }
@@ -159,7 +177,6 @@ export const Play = ({ today, skew }: Props) => {
       : thread.length <= 1 && !result
         ? `Join 1 to ${pattern.buttons.length} in order and fill every square.`
         : `${thread.length} of ${total} stitches`;
-  const badge = result ? badgeLabel(badgeFor(result.hints, result.unpicks), result.unpicks) : '';
 
   return (
     <main className="play">
@@ -167,7 +184,7 @@ export const Play = ({ today, skew }: Props) => {
         <Logo height={58} />
         <div className="meta">
           <span className="number">No. {today.day}</span>
-          <Needles count={NEEDLES_FOR[pattern.difficulty]} label={`${pattern.difficulty} pattern`} />
+          <Level difficulty={pattern.difficulty} />
         </div>
       </header>
 
@@ -197,7 +214,7 @@ export const Play = ({ today, skew }: Props) => {
         {status}
       </p>
 
-      <footer className="bar controls">
+      <footer className="bar controls" hidden={Boolean(result)}>
         <button type="button" className="patch cobalt" onClick={onUndo} disabled={Boolean(result) || thread.length <= 1}>
           <Icon name="undo" />
           Undo
@@ -216,17 +233,7 @@ export const Play = ({ today, skew }: Props) => {
         </button>
       </footer>
 
-      {result ? (
-        <section className="note" aria-live="polite">
-          <h2>
-            No. {today.day} stitched in {formatTime(result.timeMs)}
-          </h2>
-          {badge ? <p className="badge">{badge}</p> : null}
-          {result.note || !result.counted ? (
-            <p className="fine">{result.note || 'Practice pattern: not counted.'}</p>
-          ) : null}
-        </section>
-      ) : null}
+      {result ? <ResultCard day={today.day} subredditName={today.subredditName} result={result} /> : null}
     </main>
   );
 };

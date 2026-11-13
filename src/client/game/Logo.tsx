@@ -5,9 +5,9 @@
 import { useEffect, useRef } from 'react';
 
 const LETTERS = ['D', 'A', 'R', 'N', 'I', 'T', '!'];
-const COLOURS = ['#D7263D', '#F29E0C', '#1F9D55', '#0E8FAE', '#2F5BEA', '#B4269C', '#E8590C'];
+const COLOURS = ['#FF1744', '#FFB300', '#00C853', '#00B0FF', '#2962FF', '#E91EC4', '#FF6D00'];
 const FONT_FAMILY = '"Alfa Slab One", Georgia, serif';
-const TWILL = '#FFF6E2';
+const TWILL = '#FFFFFF';
 const EDGE = '#1C1B20';
 
 /** Mix a colour toward black (f < 0) or white (f > 0). */
@@ -30,12 +30,12 @@ const satin = (ctx: CanvasRenderingContext2D, colour: string, dpr: number): Canv
   const step = t / 2;
   g.lineWidth = Math.max(1, dpr * 0.45);
   for (let k = -t; k <= 2 * t; k += step) {
-    g.strokeStyle = shade(colour, -0.2);
+    g.strokeStyle = shade(colour, -0.1);
     g.beginPath();
     g.moveTo(k, 0);
     g.lineTo(k - t, t);
     g.stroke();
-    g.strokeStyle = shade(colour, 0.3);
+    g.strokeStyle = shade(colour, 0.35);
     g.beginPath();
     g.moveTo(k + step / 2, 0);
     g.lineTo(k + step / 2 - t, t);
@@ -116,7 +116,7 @@ export const Logo = ({ height }: { height: number }) => {
       each((p) => {
         c.fillStyle = satin(c, p.colour, dpr);
         c.fillText(p.ch, 0, 0);
-        c.strokeStyle = shade(p.colour, -0.38);
+        c.strokeStyle = shade(p.colour, -0.3);
         c.lineWidth = Math.max(1, fontPx * 0.022);
         c.strokeText(p.ch, 0, 0);
       });
@@ -125,9 +125,9 @@ export const Logo = ({ height }: { height: number }) => {
       c.setTransform(1, 0, 0, 1, 0, 0);
       c.globalCompositeOperation = 'source-atop';
       const sheen = c.createLinearGradient(0, 0, comp.width * 0.4, comp.height);
-      sheen.addColorStop(0, 'rgba(255, 255, 255, 0.28)');
-      sheen.addColorStop(0.55, 'rgba(255, 255, 255, 0)');
-      sheen.addColorStop(1, 'rgba(0, 0, 0, 0.16)');
+      sheen.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+      sheen.addColorStop(0.6, 'rgba(255, 255, 255, 0)');
+      sheen.addColorStop(1, 'rgba(255, 255, 255, 0.04)');
       c.fillStyle = sheen;
       c.fillRect(0, 0, comp.width, comp.height);
       c.globalCompositeOperation = 'source-over';

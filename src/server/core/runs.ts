@@ -2,7 +2,7 @@
 // hints one step at a time, and checks every submitted thread against the rules.
 
 import { HINT_COOLDOWN_MS, badgeFor } from '../../shared/api.ts';
-import type { HintResponse, RunView, StartResponse, SubmitResponse } from '../../shared/api.ts';
+import type { HintResponse, RunView, Standing, StartResponse, SubmitResponse } from '../../shared/api.ts';
 import { checkThread, compile } from '../../shared/puzzle/pattern.ts';
 import type { StoredPattern } from '../../shared/puzzle/pattern.ts';
 import type { Store } from './store.ts';
@@ -38,6 +38,13 @@ const view = (run: Run): RunView => ({
   unpicks: run.unpicks,
   hintReadyAt: run.lastHintAt ? run.lastHintAt + HINT_COOLDOWN_MS : 0,
 });
+
+/** Rank among today's counted solvers, fastest first, or null without a counted finish. */
+export const getStanding = async (store: Store, day: number, userId: string): Promise<Standing | null> => {
+  const position = await store.zRank(leaderboardKey(day), userId);
+  if (position === undefined) return null;
+  return { rank: position + 1, solvers: await store.zCard(leaderboardKey(day)) };
+};
 
 export const getRun = async (store: Store, day: number, userId: string): Promise<RunView | null> => {
   const run = await readRun(store, day, userId);
@@ -102,7 +109,15 @@ export const submitRun = async (
   if (!run) return { ok: false, reason: 'not-started' };
   if (run.finishedAt !== null && run.timeMs !== null) {
     const kept = run.unpicks ?? 0;
-    return { ok: true, timeMs: run.timeMs, hints: run.hints, unpicks: kept, badge: badgeFor(run.hints, kept), counted };
+    return {
+      ok: true,
+      timeMs: run.timeMs,
+      hints: run.hints,
+      unpicks: kept,
+      badge: badgeFor(run.hints, kept),
+      counted,
+      standing: counted ? await getStanding(store, day, userId) : null,
+    };
   }
   const verdict = checkThread(compile(pattern), thread);
   if (!verdict.ok) return { ok: false, reason: verdict.reason };
@@ -115,5 +130,13 @@ export const submitRun = async (
   run.unpicks = cleanUnpicks;
   await writeRun(store, day, userId, run);
   if (counted) await store.zAdd(leaderboardKey(day), { member: userId, score: timeMs });
-  return { ok: true, timeMs, hints: run.hints, unpicks: cleanUnpicks, badge: badgeFor(run.hints, cleanUnpicks), counted };
+  return {
+    ok: true,
+    timeMs,
+    hints: run.hints,
+    unpicks: cleanUnpicks,
+    badge: badgeFor(run.hints, cleanUnpicks),
+    counted,
+    standing: counted ? await getStanding(store, day, userId) : null,
+  };
 };

@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { HINT_COOLDOWN_MS, badgeFor, badgeLabel, formatTime } from '../../shared/api.ts';
+import { HINT_COOLDOWN_MS, badgeFor, badgeLabel, formatTime, ordinal, shareText, standingLine } from '../../shared/api.ts';
 import type { StoredPattern } from '../../shared/puzzle/pattern.ts';
 import { seeded } from '../../shared/puzzle/rng.ts';
 import { chooseNextPattern, currentDay, dayForPost, nextResetAt, postTitle, recordDay } from './days.ts';
-import { MIN_MS_PER_CELL, getRun, leaderboardKey, startRun, submitRun, takeHint } from './runs.ts';
+import { MIN_MS_PER_CELL, getRun, getStanding, leaderboardKey, startRun, submitRun, takeHint } from './runs.ts';
 import { createMemoryStore } from './store.ts';
 
 // 3x3, unique: buttons 1..4 at cells 0, 2, 6, 8.
@@ -75,7 +75,15 @@ test('a valid thread is timed by the server and ranked', async () => {
   const store = createMemoryStore();
   await startRun(store, 1, 'u1', 5000);
   const result = await submitRun(store, 1, 'u1', PATTERN, PATTERN.solution, 1, 5000 + 48000, true);
-  assert.deepEqual(result, { ok: true, timeMs: 48000, hints: 0, unpicks: 1, badge: 'no-hints-counted', counted: true });
+  assert.deepEqual(result, {
+    ok: true,
+    timeMs: 48000,
+    hints: 0,
+    unpicks: 1,
+    badge: 'no-hints-counted',
+    counted: true,
+    standing: { rank: 1, solvers: 1 },
+  });
   assert.equal(await store.zScore(leaderboardKey(1), 'u1'), 48000);
 });
 
@@ -172,4 +180,57 @@ test('the reset is at 01:00 UTC and titles use the Lagos date', () => {
   assert.equal(postTitle(14, Date.UTC(2026, 10, 25, 1, 0)), 'DarnIt! #14 · 25 Nov 2026');
   // 23:30 UTC is already the next day in Lagos.
   assert.equal(postTitle(15, Date.UTC(2026, 10, 25, 23, 30)), 'DarnIt! #15 · 26 Nov 2026');
+});
+
+test('standing ranks counted finishes fastest first', async () => {
+  const store = createMemoryStore();
+  for (const [user, ms] of [['a', 40000], ['b', 20000], ['c', 60000]] as const) {
+    await startRun(store, 1, user, 0);
+    await submitRun(store, 1, user, PATTERN, PATTERN.solution, 0, ms, true);
+  }
+  assert.deepEqual(await getStanding(store, 1, 'b'), { rank: 1, solvers: 3 });
+  assert.deepEqual(await getStanding(store, 1, 'a'), { rank: 2, solvers: 3 });
+  assert.deepEqual(await getStanding(store, 1, 'c'), { rank: 3, solvers: 3 });
+  assert.equal(await getStanding(store, 1, 'nobody'), null);
+  await startRun(store, 1, 'd', 0);
+  const result = await submitRun(store, 1, 'd', PATTERN, PATTERN.solution, 0, 30000, true);
+  assert.ok(result.ok);
+  assert.deepEqual(result.standing, { rank: 2, solvers: 4 });
+});
+
+test('practice finishes have no standing', async () => {
+  const store = createMemoryStore();
+  await startRun(store, 1, 'u1', 0);
+  const result = await submitRun(store, 1, 'u1', PATTERN, PATTERN.solution, 0, 30000, false);
+  assert.ok(result.ok);
+  assert.equal(result.standing, null);
+});
+
+test('the standing line uses rank below five solvers, percentage from five', () => {
+  assert.equal(standingLine({ rank: 2, solvers: 4 }, 'DarnItGame'), '2nd of 4 today');
+  assert.equal(standingLine({ rank: 1, solvers: 1 }, 'DarnItGame'), '1st of 1 today');
+  assert.equal(standingLine({ rank: 2, solvers: 8 }, 'DarnItGame'), 'Faster than 75% of r/DarnItGame today');
+  assert.equal(standingLine({ rank: 1, solvers: 5 }, 'DarnItGame'), 'Faster than 80% of r/DarnItGame today');
+  assert.equal(standingLine({ rank: 7, solvers: 7 }, 'DarnItGame'), '7th of 7 today', 'last place never reads 0%');
+});
+
+test('ordinals', () => {
+  assert.deepEqual([1, 2, 3, 4, 11, 12, 13, 21, 22, 23, 101, 111].map(ordinal), [
+    '1st', '2nd', '3rd', '4th', '11th', '12th', '13th', '21st', '22nd', '23rd', '101st', '111th',
+  ]);
+});
+
+test('share text matches the SPEC example and never shows the thread', () => {
+  assert.equal(
+    shareText({ day: 14, timeMs: 48_500, badge: 'flawless', unpicks: 0, standing: { rank: 2, solvers: 8 }, subredditName: 'DarnItGame', streak: 12 }),
+    'DarnIt! #14 · 0:48\nFaster than 75% of r/DarnItGame today\nFlawless · 12-day streak'
+  );
+  assert.equal(
+    shareText({ day: 3, timeMs: 125_000, badge: 'none', unpicks: 4, standing: { rank: 2, solvers: 3 }, subredditName: 'DarnItGame' }),
+    'DarnIt! #3 · 2:05\n2nd of 3 today'
+  );
+  assert.equal(
+    shareText({ day: 3, timeMs: 61_000, badge: 'no-hints-counted', unpicks: 1, standing: null, subredditName: 'DarnItGame' }),
+    'DarnIt! #3 · 1:01\nNo hints · 1 unpick'
+  );
 });

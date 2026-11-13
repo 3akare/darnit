@@ -62,7 +62,7 @@ A new pattern goes live every day at 02:00 Lagos time (01:00 UTC, 20:00 New York
 - Opening today's post after solving shows your results, not a fresh board, with a countdown to the next pattern.
 - Older posts stay playable for practice but never count toward leaderboards or streaks. They show "Closed — play today's pattern" with a button that jumps to today's post.
 - Difficulty is random each day, not tied to the weekday: 40% easy, 40% medium, 20% hard, with no more than two hard days in a row.
-- The launch screen shows difficulty as one to three needles.
+- The launch screen and play screen show difficulty as a word: Easy, Medium or Hard.
 
 | Difficulty | Grid | Buttons | Seams | Cross-stitch cells | Target solve (experienced player) |
 | --- | --- | --- | --- | --- | --- |
@@ -125,7 +125,7 @@ Flawless · 12-day streak
 
 Four screens plus a return state, one results page, nothing extra during play.
 
-1. **Feed card** (inline launch screen): pattern number, date, difficulty needles, "142 people stitched today" with the last five solvers' snoovatars, your streak, and one Start stitching button. On mobile it opens in expanded mode.
+1. **Feed card** (inline launch screen): pattern number, date, difficulty (Easy, Medium or Hard), "142 people stitched today" with the last five solvers' snoovatars, your streak, and one Start stitching button. On mobile it opens in expanded mode.
 2. **Play screen**: timer and Reset at the top, the board in its hoop, Undo and Hint under it, and a collapsed How to play with two mini drawings (buttons in order; the cross-stitch rule). Nothing else on screen.
 3. **Solve moment**, about 1.5 s: the thread tightens, the buttons glint, and the board shrinks into a quilt square that flies into your quilt.
 4. **Results**, one scroll, in this order:
@@ -203,7 +203,7 @@ Materials:
 - **Buttons:** real buttons, mixed like a tin of odd ones: round, square, scalloped flower, hexagon and domed brass shank shapes, in navy, mustard, wood, mother-of-pearl, green, black, red and purple. Raised rim, dished centre, thread holes above and below the number so they never cover it. The same pattern always gets the same buttons. When the wool reaches one, a thin strand of wool rings it.
 - **Seams:** black thread in a running stitch along the cell edge, much heavier than the pencil grid.
 - **Cross-stitch cells:** a pencil X in a dashed pencil ring. After the first pass, a dashed ink ring and two ink chevrons are drawn on top of the wool, pointing along the pass still owed, so the cell never disappears under the thread. On the second pass the wool crosses over the first strand.
-- **Logo:** embroidered varsity lettering, like a college hoodie: "DARNIT!" in heavy slab capitals (Alfa Slab One) on a gentle arch, each letter a satin-stitch fill in its own colour (red, marigold, green, teal, cobalt, magenta, orange), with a cream twill outline, a dark edge and a raised shadow. Players still read the name as DarnIt!.
+- **Logo:** embroidered varsity lettering, like a college hoodie: "DARNIT!" in heavy slab capitals (Alfa Slab One) on a gentle arch, each letter a satin-stitch fill in its own bright, fully saturated colour (red, amber, green, sky blue, blue, magenta, orange), with a white twill outline, a dark edge and a raised shadow. Players still read the name as DarnIt!.
 - **Controls:** embroidered patches: a solid colour with a satin texture, a dashed stitched border and a raised shadow. Undo is cobalt, Hint is magenta, Reset is black, Start stitching is wool red.
 - **Results:** a paper note taped over the page.
 
@@ -298,10 +298,10 @@ P0 is the core loop plus the Reddit-y layer; nothing in P1 starts until P0 works
 
 P0, must ship:
 
-- [ ] Generator, solver and a 60-day pattern bank
+- [x] Generator, solver and a 60-day pattern bank
 - [ ] Daily scheduled post at 01:00 UTC
 - [ ] Lag-free drawing, Undo, Reset, Hint with cooldown
-- [ ] Server timing and path validation
+- [x] Server timing and path validation
 - [ ] Results card with badges and copyable share text
 - [ ] Today leaderboard with the percentile line
 - [ ] Streaks and stats

@@ -5,6 +5,7 @@ import { Hono } from 'hono';
 import { BANK } from '../server/bank/bank.ts';
 import { currentDay, listDays, recordDay } from '../server/core/days.ts';
 import type { Day } from '../server/core/days.ts';
+import { leaderboardKey } from '../server/core/runs.ts';
 import { api } from '../server/routes/api.ts';
 import type { Difficulty, StoredPattern } from '../shared/puzzle/pattern.ts';
 import { context, redis } from './devvit-server.ts';
@@ -23,6 +24,10 @@ const open = async (pattern: StoredPattern): Promise<Day> => {
   const days = await listDays(redis);
   const day: Day = { day: days.length + 1, patternId: pattern.id, postId: `t3_preview${days.length + 1}`, createdAt: Date.now() };
   await recordDay(redis, day);
+  // Test page only: six sample solve times so the result card's standing line shows.
+  // The real game never invents players.
+  const sample = [41, 58, 73, 96, 132, 214].map((s, i) => ({ member: `t2_sample${i}`, score: s * 1000 }));
+  await redis.zAdd(leaderboardKey(day.day), ...sample);
   context.postId = day.postId;
   return day;
 };

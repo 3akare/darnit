@@ -12,11 +12,9 @@ import { createRoot } from 'react-dom/client';
 import type { TodayResponse } from '../shared/api.ts';
 import { formatTime } from '../shared/api.ts';
 import { fetchToday } from './api.ts';
-import { Needles } from './game/Craft.tsx';
+import { Level } from './game/Craft.tsx';
 import { Logo } from './game/Logo.tsx';
 import { applyPaper } from './paper.ts';
-
-const NEEDLES_FOR = { easy: 1, medium: 2, hard: 3 };
 
 const Splash = () => {
   const [today, setToday] = useState<TodayResponse | null>(null);
@@ -30,7 +28,7 @@ const Splash = () => {
       {today ? (
         <div className="meta">
           <span className="number">No. {today.day}</span>
-          <Needles count={NEEDLES_FOR[today.pattern.difficulty]} label={`${today.pattern.difficulty} pattern`} />
+          <Level difficulty={today.pattern.difficulty} />
         </div>
       ) : null}
       {time !== null ? <p>Stitched in {formatTime(time)}</p> : null}

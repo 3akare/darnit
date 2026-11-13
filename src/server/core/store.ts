@@ -7,6 +7,8 @@ export type Store = {
   del(...keys: string[]): Promise<unknown>;
   zAdd(key: string, ...members: { member: string; score: number }[]): Promise<unknown>;
   zScore(key: string, member: string): Promise<number | undefined>;
+  /** 0-based position by ascending score, or undefined if absent. */
+  zRank(key: string, member: string): Promise<number | undefined>;
   zCard(key: string): Promise<number>;
 };
 
@@ -37,6 +39,12 @@ export const createMemoryStore = (
       dump();
     },
     zScore: async (key, member) => readSet(key)[member],
+    zRank: async (key, member) => {
+      const set = readSet(key);
+      if (!(member in set)) return undefined;
+      const order = Object.entries(set).sort(([ma, a], [mb, b]) => a - b || (ma < mb ? -1 : ma > mb ? 1 : 0));
+      return order.findIndex(([m]) => m === member);
+    },
     zCard: async (key) => Object.keys(readSet(key)).length,
   };
 };

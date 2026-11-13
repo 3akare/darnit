@@ -5,7 +5,7 @@ import { Hono } from 'hono';
 import type { HintRequest, HintResponse, StartResponse, SubmitRequest, SubmitResponse, TodayResponse } from '../../shared/api.ts';
 import { toPublic } from '../../shared/puzzle/pattern.ts';
 import { currentDay, dayForPost, nextResetAt, patternForDay } from '../core/days.ts';
-import { getRun, startRun, submitRun, takeHint } from '../core/runs.ts';
+import { getRun, getStanding, startRun, submitRun, takeHint } from '../core/runs.ts';
 
 export const api = new Hono();
 
@@ -30,7 +30,9 @@ api.get('/today', async (c) => {
     pattern: toPublic(found.pattern),
     isToday: found.isToday,
     username: context.username ?? null,
+    subredditName: context.subredditName,
     run: context.userId ? await getRun(redis, found.day.day, context.userId) : null,
+    standing: context.userId && found.isToday ? await getStanding(redis, found.day.day, context.userId) : null,
     serverNow: now,
     nextResetAt: nextResetAt(now),
   };

@@ -130,14 +130,24 @@ body {
   }
 }
 
-/* Difficulty needles */
-.needles {
-  display: inline-flex;
-  gap: 2px;
-  align-items: center;
+/* Difficulty label */
+.level {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #ffffff;
 }
-.needles svg {
-  transform: rotate(24deg);
+.level.easy {
+  background: #15803d;
+}
+.level.medium {
+  background: #b45309;
+}
+.level.hard {
+  background: #b91c1c;
 }
 
 /* Inline feed card: fits the post, taps only, nothing scrolls. */
@@ -244,6 +254,9 @@ body {
 .controls .patch {
   flex: 1;
 }
+.controls[hidden] {
+  display: none;
+}
 
 /* The result: a paper note taped over the page. */
 .note {
@@ -290,6 +303,33 @@ body {
 .badge {
   font-weight: 700;
   color: var(--wool);
+}
+.standing {
+  font-weight: 700;
+}
+.result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.result .patch {
+  margin-top: 12px;
+  align-self: stretch;
+}
+.share-text {
+  margin-top: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  background: #ffffff;
+  border: 1px dashed rgba(91, 96, 112, 0.6);
+  border-radius: 6px;
+  resize: none;
+  user-select: text;
+  -webkit-user-select: text;
 }
 .fine {
   font-size: 13px;
