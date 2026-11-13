@@ -1,5 +1,7 @@
 # DarnIt!
 
+Play it in [r/DarnItGame](https://www.reddit.com/r/DarnItGame). Devvit app: `darnit-puzzle`.
+
 A daily one-line puzzle on Reddit: sew one thread through numbered buttons, in order, filling
 every cell of the fabric. Built on Devvit Web for the Reddit Daily Games hackathon.
 

@@ -1,9 +1,8 @@
 # DarnIt!
 
 A daily one-line puzzle for the Reddit Daily Games hackathon, built as a Devvit Web app
-named `darnit` (React client, Hono server, Devvit Redis). The name `darnit` is already
-registered on Reddit by someone else, so `devvit.json` needs a new name (for example
-`darnit-game`) before the first upload. `SPEC.md` is the source of truth
+named `darnit-puzzle` (React client, Hono server, Devvit Redis); `darnit` was taken.
+Players always see the name "DarnIt!". It is installed in r/DarnItGame. `SPEC.md` is the source of truth
 for what to build. `SPIKES.md` records what the platform actually allows.
 
 ## Rules
@@ -23,10 +22,12 @@ for what to build. `SPIKES.md` records what the platform actually allows.
 5. **No screen is done until David approves a phone screenshot.** A desktop or headless
    render does not count. When a screen is ready, ask David for a real phone screenshot and
    wait for his approval before ticking it off or calling it done.
-6. **Never run the Devvit CLI from a cloud session.** No `devvit login`, `upload`,
-   `playtest` or `logs` from Claude Code on the web. David's Reddit account was suspended
-   shortly after a cloud login (see `SPIKES.md`). Devvit commands run on David's machine
-   only; cloud sessions write code and test through the off-Reddit test page.
+6. **Use the Devvit CLI from a cloud session sparingly.** David's account was suspended
+   shortly after an earlier cloud login (see `SPIKES.md`). On Nov 13, with his computer
+   down, David explicitly authorised cloud sessions to run it, knowing the risk. Keep it to
+   `devvit upload`, `devvit install r/DarnItGame`, and short `devvit logs` reads, only
+   when shipping a change he has asked for. No long `devvit playtest` loops, no posting or
+   commenting as him, and never `devvit publish`. Test on the off-Reddit page first.
 
 ## Commands
 

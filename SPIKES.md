@@ -105,6 +105,15 @@ image for an account with no custom avatar.
 | Landing on the practice board and the Results page cold made little sense | The practice board opens with one line on the goal. Every Results section has a one-line explanation, and the heatmap is now "Today's trickiest spot", drawn over the day's solution so the orange squares read as places on the route |
 | The heatmap feels useless | Reworked as above. After seeing the rework, David decided to keep it (Nov 13) |
 
+### Live on Reddit (Nov 13)
+
+The account was restored. The app was registered as `darnit-puzzle` (`darnit` is taken),
+uploaded as version 0.0.1 and installed in r/DarnItGame from the cloud session, which David
+authorised knowing the risk. The install trigger created DarnIt! #1 (pattern m10, medium) as
+post t3_1xv9ag4. The daily job posts at 01:00 UTC from tonight, so numbering started on
+Nov 13 rather than Nov 25. The old `darnit-spike` app was no longer installed in
+r/DarnItGame.
+
 ### From the account suspension
 
 | SPEC.md says | What happened | Change to SPEC.md |
