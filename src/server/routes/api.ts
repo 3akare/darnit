@@ -5,6 +5,7 @@ import { Hono } from 'hono';
 import type {
   HintRequest,
   HintResponse,
+  Prefs,
   ResultsResponse,
   StartResponse,
   SubmitRequest,
@@ -13,6 +14,7 @@ import type {
 } from '../../shared/api.ts';
 import { toPublic } from '../../shared/puzzle/pattern.ts';
 import { currentDay, dayForPost, nextResetAt, patternForDay } from '../core/days.ts';
+import { markPrefs, readPrefs } from '../core/prefs.ts';
 import { buildResults } from '../core/results.ts';
 import { getRun, getStanding, leaderboardKey, startRun, submitRun, takeHint } from '../core/runs.ts';
 
@@ -44,6 +46,7 @@ api.get('/today', async (c) => {
     standing: context.userId && found.isToday ? await getStanding(redis, found.day.day, context.userId) : null,
     solvers: await redis.zCard(leaderboardKey(found.day.day)),
     postId: found.day.postId,
+    prefs: context.userId ? await readPrefs(redis, context.userId) : null,
     serverNow: now,
     nextResetAt: nextResetAt(now),
   };
@@ -88,6 +91,12 @@ api.post('/submit', async (c) => {
       }
     )
   );
+});
+
+api.post('/prefs', async (c) => {
+  if (!context.userId) return c.json({ ok: false });
+  const update = await c.req.json<Partial<Prefs>>();
+  return c.json({ ok: true, prefs: await markPrefs(redis, context.userId, update) });
 });
 
 api.get('/results', async (c) => {

@@ -15,6 +15,9 @@ export type RunView = {
   hintReadyAt: number;
 };
 
+/** Onboarding flags, kept per player. */
+export type Prefs = { tutorialDone: boolean; crossIntroSeen: boolean };
+
 /** Where a finished run places among today's solvers. */
 export type Standing = { rank: number; solvers: number };
 
@@ -32,6 +35,8 @@ export type TodayResponse = {
   /** How many have solved this day's pattern. */
   solvers: number;
   postId: string;
+  /** Null when logged out; the client then keeps the flags on the device. */
+  prefs: Prefs | null;
   serverNow: number;
   nextResetAt: number;
 };

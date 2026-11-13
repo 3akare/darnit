@@ -8,7 +8,8 @@ import { compile, isComplete } from '../../shared/puzzle/pattern.ts';
 import { createUnpickCounter, resetThread, undoStitch } from '../../shared/puzzle/stitching.ts';
 import type { Stitch } from '../../shared/puzzle/stitching.ts';
 
-import { askHint, startRun, submitThread } from '../api.ts';
+import { askHint, markPrefs, prefsFrom, startRun, submitThread } from '../api.ts';
+import { CrossIntro } from './CrossIntro.tsx';
 import { Board } from './Board.tsx';
 import { Icon, Level } from './Craft.tsx';
 import { Logo } from './Logo.tsx';
@@ -57,6 +58,20 @@ export const Play = ({ today, skew }: Props) => {
   const [hintReadyAt, setHintReadyAt] = useState(today.run ? today.run.hintReadyAt - skew : 0);
   const [hintBusy, setHintBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [crossIntro, setCrossIntro] = useState(
+    () => pattern.crosses.length > 0 && !prefsFrom(today).crossIntroSeen && !today.run?.finished
+  );
+  const closeCrossIntro = () => {
+    markPrefs({ crossIntroSeen: true });
+    setCrossIntro(false);
+  };
+
+  // Stall nudge: no stitch within 20 s, and button 1 starts to pulse until the first one.
+  useEffect(() => {
+    if (thread.length > 1 || result || crossIntro) return;
+    const id = window.setTimeout(() => setHint({ cell: firstCell, until: Number.POSITIVE_INFINITY }), 20_000);
+    return () => window.clearTimeout(id);
+  }, [thread.length, result, crossIntro, firstCell]);
   const submitting = useRef(false);
 
   useEffect(() => {
@@ -118,6 +133,7 @@ export const Play = ({ today, skew }: Props) => {
       threadRef.current = stitch.thread;
       setThread(stitch.thread);
       setMessage('');
+      if (stitch.added > 0) setHint((h) => (h.until === Number.POSITIVE_INFINITY ? { cell: -1, until: 0 } : h));
       if (stitch.added > 0 && startedAt === null) {
         // First stitch: start the clock here and on the server.
         setStartedAt(Date.now());
@@ -255,6 +271,7 @@ export const Play = ({ today, skew }: Props) => {
         </button>
       </footer>
 
+      {crossIntro ? <CrossIntro onClose={closeCrossIntro} /> : null}
       {result ? <ResultCard day={today.day} subredditName={today.subredditName} result={result} /> : null}
     </main>
   );

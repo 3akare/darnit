@@ -854,6 +854,42 @@ export type Live = {
   reducedMotion: boolean;
   /** Squares the thread still owes, hatched when the last button was reached too early. */
   empty: readonly number[];
+  /** Square the practice board's hand points at, or -1. */
+  guideCell: number;
+};
+
+/** A white-gloved pointing hand, fingertip at (x, y). */
+const drawHand = (ctx: Ctx, geo: Geometry, x: number, y: number, now: number, still: boolean): void => {
+  const u = geo.cell * 0.5;
+  const bob = still ? 0 : Math.sin(now / 240) * u * 0.12;
+  ctx.save();
+  ctx.translate(x + u * 0.05, y + bob);
+  ctx.rotate(-0.4);
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+  ctx.shadowBlur = 4 * geo.dpr;
+  ctx.shadowOffsetX = 2 * geo.dpr;
+  ctx.shadowOffsetY = 4 * geo.dpr;
+  const glove = new Path2D();
+  glove.roundRect(-0.15 * u, 0, 0.3 * u, 0.95 * u, 0.15 * u); // pointing finger
+  glove.roundRect(-0.28 * u, 0.62 * u, 0.86 * u, 0.78 * u, 0.26 * u); // palm
+  glove.roundRect(0.1 * u, 0.5 * u, 0.24 * u, 0.42 * u, 0.12 * u); // folded fingers
+  glove.roundRect(0.3 * u, 0.56 * u, 0.24 * u, 0.4 * u, 0.12 * u);
+  glove.roundRect(-0.5 * u, 0.82 * u, 0.4 * u, 0.24 * u, 0.12 * u); // thumb
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fill(glove);
+  ctx.restore();
+  ctx.save();
+  ctx.translate(x + u * 0.05, y + bob);
+  ctx.rotate(-0.4);
+  ctx.strokeStyle = '#16151A';
+  ctx.lineWidth = Math.max(1.6, u * 0.07);
+  ctx.lineJoin = 'round';
+  ctx.stroke(glove);
+  ctx.beginPath();
+  ctx.moveTo(-0.2 * u, 1.18 * u);
+  ctx.lineTo(0.5 * u, 1.18 * u);
+  ctx.stroke();
+  ctx.restore();
 };
 
 /** Draw one frame. Returns true while something is still animating. */
@@ -942,6 +978,12 @@ export const drawFrame = (
       ctx.stroke();
     }
     ctx.restore();
+  }
+
+  if (live.guideCell >= 0) {
+    animating = !live.reducedMotion;
+    const [gx, gy] = centre(geo, live.guideCell);
+    drawHand(ctx, geo, gx, gy, now, live.reducedMotion);
   }
 
   if (live.hintCell >= 0 && now < live.hintUntil) {

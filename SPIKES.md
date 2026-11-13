@@ -84,6 +84,16 @@ image for an account with no custom avatar.
 | Drag | "Not so bad, but not the best" | The board now applies steps itself and redraws in the same frame, the wool follows the finger, cells change only once the finger is a fifth of a cell past the edge, and phones that allow it give a short vibration per stitch |
 | Dark mode is indigo denim | David wants a white background | The game is always white paper (SPEC.md updated) |
 
+### From building the Results page and onboarding (Nov 13)
+
+| SPEC.md says | What was built | Change to SPEC.md |
+| --- | --- | --- |
+| Heatmap: "each finished run uploads a compressed move log ... the server aggregates per-cell unpick counts" | Each finished run sends only the squares the player unpicked back to; the server de-duplicates them, counts each player once per square, and ignores out-of-range squares | Move logs arrive with Race the fastest (P1). The heatmap does not need them |
+| Leaderboard rows show snoovatars | A snoovatar when Reddit gives one, otherwise a coloured circle with the player's initial and a stitched ring | Already noted under the spikes: most players have no snoovatar |
+| Stall nudge "if a new player hasn't stitched within 20 s" | Applies to every player: after 20 s with no stitch, button 1 pulses until the first stitch | Drop "new" |
+| Results are reached after the solve moment | The finished thread stays on screen for 1.6 s, then the Results page replaces the play screen. Reopening a solved post goes straight to Results | Solve animation (thread tightens, board shrinks into a quilt square) is still to do in the visual pass |
+| Personal quilt squares: "that day's pattern sewn in your thread colour" | Sewn as a simple line in wool red; unlockable colours are P2 | None |
+
 ### From the account suspension
 
 | SPEC.md says | What happened | Change to SPEC.md |

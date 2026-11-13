@@ -1,4 +1,4 @@
-import type { HintResponse, ResultsResponse, StartResponse, SubmitResponse, TodayResponse } from '../shared/api.ts';
+import type { HintResponse, Prefs, ResultsResponse, StartResponse, SubmitResponse, TodayResponse } from '../shared/api.ts';
 
 const post = async <T>(path: string, body: unknown): Promise<T> => {
   const res = await fetch(path, {
@@ -31,4 +31,27 @@ export const fetchResults = async (): Promise<ResultsResponse> => {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data: ResultsResponse = await res.json();
   return data;
+};
+
+const PREFS_KEY = 'darnit-prefs';
+
+const localPrefs = (): Prefs => {
+  try {
+    const saved: Partial<Prefs> = JSON.parse(localStorage.getItem(PREFS_KEY) ?? '{}');
+    return { tutorialDone: saved.tutorialDone === true, crossIntroSeen: saved.crossIntroSeen === true };
+  } catch {
+    return { tutorialDone: false, crossIntroSeen: false };
+  }
+};
+
+/** Onboarding flags: the server's copy when logged in, this device's otherwise. */
+export const prefsFrom = (today: TodayResponse): Prefs => today.prefs ?? localPrefs();
+
+export const markPrefs = (update: Partial<Prefs>): void => {
+  try {
+    localStorage.setItem(PREFS_KEY, JSON.stringify({ ...localPrefs(), ...update }));
+  } catch {
+    // Storage can be blocked; the server copy still holds for logged-in players.
+  }
+  void post('/api/prefs', update).catch(() => undefined);
 };

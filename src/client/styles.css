@@ -500,3 +500,55 @@ body {
   color: var(--graphite);
   font-weight: 700;
 }
+
+/* Practice board */
+.skip {
+  font: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--graphite);
+  background: none;
+  border: 0;
+  padding: 10px 4px;
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.lesson {
+  margin: 0;
+  font-size: 20px;
+}
+.tutorial .status {
+  font-size: 16px;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* Cross-stitch intro, over the board */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: rgba(252, 251, 248, 0.86);
+}
+.intro-card {
+  max-width: 320px;
+  padding: 20px;
+  background: var(--note);
+  border-radius: 4px;
+  box-shadow: 0 14px 30px -10px rgba(0, 0, 0, 0.35);
+  text-align: center;
+  transform: rotate(-1deg);
+}
+.intro-card canvas {
+  display: block;
+  margin: 0 auto 12px;
+}
+.intro-card p {
+  margin: 6px 0 0;
+}

@@ -23,6 +23,8 @@ type Props = {
   locked: boolean;
   /** Squares to hatch because the thread reached the last button too early. */
   empty: readonly number[];
+  /** Practice board only: the square the hand points at. */
+  guideCell?: number;
   /** Every change the finger makes: drag steps and taps that cut the thread back. */
   onStitch: (stitch: Stitch) => void;
 };
@@ -35,7 +37,18 @@ const buzz = (ms: number): void => {
   }
 };
 
-export const Board = ({ pattern, board, thread, hintCell, hintUntil, solved, locked, empty, onStitch }: Props) => {
+export const Board = ({
+  pattern,
+  board,
+  thread,
+  hintCell,
+  hintUntil,
+  solved,
+  locked,
+  empty,
+  guideCell = -1,
+  onStitch,
+}: Props) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const threadRef = useRef<readonly number[]>(thread);
   const props = useRef({ solved, locked, onStitch });
@@ -50,6 +63,7 @@ export const Board = ({ pattern, board, thread, hintCell, hintUntil, solved, loc
     solved,
     reducedMotion: false,
     empty,
+    guideCell,
   });
   const refresh = useRef<(layerChanged: boolean) => void>(() => {});
 
@@ -58,13 +72,14 @@ export const Board = ({ pattern, board, thread, hintCell, hintUntil, solved, loc
     live.current.hintCell = hintCell;
     live.current.hintUntil = hintUntil;
     live.current.empty = empty;
+    live.current.guideCell = guideCell;
     const solvedChanged = live.current.solved !== solved;
     live.current.solved = solved;
     // Undo, Reset and hints change the thread from outside the board.
     const threadChanged = threadRef.current !== thread;
     threadRef.current = thread;
     refresh.current(threadChanged || solvedChanged);
-  }, [thread, hintCell, hintUntil, solved, locked, empty, onStitch]);
+  }, [thread, hintCell, hintUntil, solved, locked, empty, guideCell, onStitch]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

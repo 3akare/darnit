@@ -234,3 +234,13 @@ test('share text matches the SPEC example and never shows the thread', () => {
     'DarnIt! #3 · 1:01\nNo hints · 1 unpick'
   );
 });
+
+test('onboarding flags start off and only turn on', async () => {
+  const { markPrefs, readPrefs } = await import('./prefs.ts');
+  const store = createMemoryStore();
+  assert.deepEqual(await readPrefs(store, 'u'), { tutorialDone: false, crossIntroSeen: false });
+  await markPrefs(store, 'u', { tutorialDone: true });
+  assert.deepEqual(await readPrefs(store, 'u'), { tutorialDone: true, crossIntroSeen: false });
+  await markPrefs(store, 'u', { crossIntroSeen: true, tutorialDone: false });
+  assert.deepEqual(await readPrefs(store, 'u'), { tutorialDone: true, crossIntroSeen: true });
+});
