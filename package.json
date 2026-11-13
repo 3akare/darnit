@@ -15,7 +15,8 @@
     "test:unit": "node --experimental-strip-types --no-warnings=ExperimentalWarning --test \"src/**/*.test.ts\"",
     "bank:generate": "node --experimental-strip-types --no-warnings=ExperimentalWarning tools/generate-bank.ts",
     "preview:build": "vite build --config vite.preview.config.ts",
-    "preview:dev": "vite --config vite.preview.config.ts --host"
+    "preview:dev": "vite --config vite.preview.config.ts --host",
+    "brand": "vite build --config tools/brand/vite.config.ts && node tools/brand/render.cjs"
   },
   "engines": {
     "node": ">=24.0.0"

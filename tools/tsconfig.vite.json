@@ -10,7 +10,8 @@
   },
   "include": [
     "../vite.config.ts",
-    "../vite.preview.config.ts"
+    "../vite.preview.config.ts",
+    "../tools/brand/vite.config.ts"
   ],
   "exclude": []
 }

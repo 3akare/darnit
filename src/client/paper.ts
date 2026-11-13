@@ -3,13 +3,14 @@
 
 import { seeded } from '../shared/puzzle/rng.ts';
 
-const paperTexture = (): string => {
+/** One 512 px tile of paper, seamless, for use as a repeating pattern. */
+export const paperTile = (): HTMLCanvasElement => {
   const size = 512;
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext('2d');
-  if (!ctx) return '';
+  if (!ctx) return canvas;
   const rnd = seeded(1977);
 
   // Grain, plus a gentle mottling that tiles seamlessly.
@@ -57,8 +58,10 @@ const paperTexture = (): string => {
     ctx.arc(rnd() * size, rnd() * size, 0.4 + rnd() * 0.5, 0, Math.PI * 2);
     ctx.fill();
   }
-  return canvas.toDataURL('image/png');
+  return canvas;
 };
+
+const paperTexture = (): string => paperTile().toDataURL('image/png');
 
 export const applyPaper = (): void => {
   try {

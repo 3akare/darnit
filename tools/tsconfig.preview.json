@@ -3,7 +3,7 @@
   "compilerOptions": {
     "outDir": "../dist/types/preview",
     "tsBuildInfoFile": "../dist/types/preview/tsconfig.tsbuildinfo",
-    "rootDir": "../src",
+    "rootDir": "..",
     "paths": {
       "@devvit/web/server": [
         "../src/preview/devvit-server.ts"
@@ -20,7 +20,8 @@
     "../src/server/core/**/*",
     "../src/server/bank/**/*",
     "../src/server/routes/api.ts",
-    "../src/server/**/*.json"
+    "../src/server/**/*.json",
+    "../tools/brand/brand.ts"
   ],
   "exclude": [
     "../src/**/*.test.ts",

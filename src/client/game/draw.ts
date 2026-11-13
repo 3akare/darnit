@@ -487,7 +487,7 @@ export const drawThreadRange = (
 export const newLayer = (geo: Geometry): [HTMLCanvasElement, Ctx | null] => newCanvas(geo);
 
 /** A plain black button with a white number. */
-const drawButton = (ctx: Ctx, geo: Geometry, x: number, y: number, n: number, reached: boolean): void => {
+export const drawButton = (ctx: Ctx, geo: Geometry, x: number, y: number, n: number, reached: boolean): void => {
   const r = geo.cell * 0.34;
   ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
   ctx.beginPath();
