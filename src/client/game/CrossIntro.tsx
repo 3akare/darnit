@@ -55,8 +55,8 @@ export const CrossIntro = ({ onClose }: { onClose: () => void }) => {
       const w = cell * 0.34;
       // First pass: straight down. Second pass: straight across, over the first.
       const down = Math.min(1, t / 1.1);
-      drawWool(ctx, partial([mx, 0], [mx, SIZE], down), w, 11);
-      if (t > 1.3) drawWool(ctx, partial([0, my], [SIZE, my], Math.min(1, (t - 1.3) / 1.1)), w, 23);
+      drawWool(ctx, partial([mx, 0], [mx, SIZE], down), w, { seeds: [0, 11] });
+      if (t > 1.3) drawWool(ctx, partial([0, my], [SIZE, my], Math.min(1, (t - 1.3) / 1.1)), w, { seeds: [0, 23] });
       if (!reduced) raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);

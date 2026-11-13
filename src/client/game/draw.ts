@@ -1,6 +1,10 @@
 // Canvas drawing for the board, in the sketchbook look: white paper with a pencil grid and
-// pricked holes, red wool laid along the thread and held down with clear tape, glossy black
-// buttons, and black running-stitch seams. Everything is drawn in code; no image files.
+// pricked holes, red wool laid along the thread and held down with clear tape, plain black
+// numbered buttons, and black running-stitch seams. Everything is drawn in code.
+//
+// Drawing is split into layers so a stitch costs little: the paper never changes, the wool
+// is cached and only its newest stretch is redrawn, and the buttons layer is redrawn only
+// when a button is reached or a cross-stitch square changes.
 
 import { RIGHT, LEFT, directionBetween, seamBelow, seamRight } from '../../shared/puzzle/pattern.ts';
 import type { Board, Pattern } from '../../shared/puzzle/pattern.ts';
@@ -233,25 +237,30 @@ const WOOL = {
   fibreDark: 'rgba(120, 8, 22, 0.32)',
   fibreLight: 'rgba(255, 175, 175, 0.3)',
 };
-const FUZZ = [
-  'rgba(214, 34, 54, 0.55)',
-  'rgba(170, 14, 32, 0.45)',
-  'rgba(245, 110, 120, 0.4)',
-  'rgba(130, 8, 24, 0.38)',
-];
+const FUZZ = ['rgba(214, 34, 54, 0.55)', 'rgba(170, 14, 32, 0.45)', 'rgba(245, 110, 120, 0.4)', 'rgba(130, 8, 24, 0.38)'];
+
+type WoolOptions = {
+  /** Raise the wool off the page (0 to 1), for the length following the finger. */
+  lift?: number;
+  /** Loose fibres and fine texture. Off for the length following the finger, to keep it fast. */
+  fuzz?: boolean;
+  /** Seed for the first segment's fibres. Segment k uses seeds[k], so a segment always looks the same. */
+  seeds?: readonly number[];
+};
 
 /**
- * A length of red wool through the given points: cast shadow, rounded body, twisted plies
- * and loose fibres. `seed` keeps the fibres still from frame to frame. `lift` (0 to 1)
- * raises the wool off the page, for the part being pulled by the finger.
+ * A length of red wool through the given points: shadow, rounded body, twisted plies and
+ * loose fibres. Each segment's fibres come from its own seed, so redrawing a segment later
+ * gives exactly the same picture.
  */
-export const drawWool = (ctx: Ctx, pts: readonly Pt[], w: number, seed: number, lift = 0): void => {
+export const drawWool = (ctx: Ctx, pts: readonly Pt[], w: number, options: WoolOptions = {}): void => {
   if (pts.length === 0) return;
+  const lift = options.lift ?? 0;
+  const fuzz = options.fuzz ?? true;
   ctx.save();
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
-  // Shadow on the paper: two soft offset strokes, cheaper than a blur.
   const sx = w * 0.08 + lift * 3;
   const sy = w * 0.2 + lift * 7;
   ctx.strokeStyle = WOOL.shadow;
@@ -262,7 +271,6 @@ export const drawWool = (ctx: Ctx, pts: readonly Pt[], w: number, seed: number, 
   tracePts(ctx, pts, sx * 0.55, sy * 0.55);
   ctx.stroke();
 
-  // Body, shading from the edges to the middle so it reads as round.
   for (const [colour, width, dx, dy, alpha] of [
     [WOOL.edge, 1, 0, 0, 1],
     [WOOL.mid, 0.84, 0, 0, 1],
@@ -277,26 +285,27 @@ export const drawWool = (ctx: Ctx, pts: readonly Pt[], w: number, seed: number, 
   }
   ctx.globalAlpha = 1;
 
-  // Twisted plies: soft slanted grooves with a highlight beside each, slightly uneven.
-  const rnd = seeded(seed);
   const dark = new Path2D();
   const light = new Path2D();
   const fibresDark = new Path2D();
   const fibresLight = new Path2D();
+  const strands = FUZZ.map(() => new Path2D());
+  const over = new Path2D();
   const step = w * 0.55;
-  let phase = 0;
   for (let k = 1; k < pts.length; k++) {
     const [ax, ay] = pts[k - 1] ?? [0, 0];
     const [bx, by] = pts[k] ?? [0, 0];
     const len = Math.hypot(bx - ax, by - ay);
     if (len < 0.01) continue;
+    const rnd = seeded(options.seeds?.[k] ?? k * 7919 + 13);
     const ux = (bx - ax) / len;
     const uy = (by - ay) / len;
     const nx = -uy;
     const ny = ux;
     const h = w * 0.4;
     const lean = w * 0.3;
-    for (let s = (step - phase) % step; s < len; s += step * (0.85 + rnd() * 0.3)) {
+    // Twisted plies: soft slanted grooves with a highlight beside each.
+    for (let s = step * 0.5; s < len; s += step * (0.85 + rnd() * 0.3)) {
       const mx = ax + ux * s;
       const my = ay + uy * s;
       const bow = w * 0.12;
@@ -307,8 +316,9 @@ export const drawWool = (ctx: Ctx, pts: readonly Pt[], w: number, seed: number, 
       light.moveTo(lx - nx * h * 0.55 - ux * lean * 0.55, ly - ny * h * 0.55 - uy * lean * 0.55);
       light.lineTo(lx + nx * h * 0.35 + ux * lean * 0.35, ly + ny * h * 0.35 + uy * lean * 0.35);
     }
-    // Fine fibres running along the strand, inside the body.
-    const fibres = Math.ceil(len / (w * 0.09));
+    if (!fuzz) continue;
+    // Fine fibres along the strand.
+    const fibres = Math.ceil(len / (w * 0.14));
     for (let i = 0; i < fibres; i++) {
       const t = rnd() * len;
       const across = (rnd() - 0.5) * w * 0.82;
@@ -320,49 +330,26 @@ export const drawWool = (ctx: Ctx, pts: readonly Pt[], w: number, seed: number, 
       path.moveTo(px, py);
       path.lineTo(px + (ux + nx * tilt) * flen, py + (uy + ny * tilt) * flen);
     }
-    phase = (phase + len) % step;
-  }
-  ctx.lineWidth = Math.max(0.5, w * 0.04);
-  ctx.strokeStyle = WOOL.fibreDark;
-  ctx.stroke(fibresDark);
-  ctx.strokeStyle = WOOL.fibreLight;
-  ctx.stroke(fibresLight);
-  ctx.strokeStyle = WOOL.twistDark;
-  ctx.lineWidth = Math.max(0.8, w * 0.11);
-  ctx.stroke(dark);
-  ctx.strokeStyle = WOOL.twistLight;
-  ctx.lineWidth = Math.max(0.7, w * 0.08);
-  ctx.stroke(light);
-
-  // Fuzz: loose fibres standing off the edges, and a few lying across the body.
-  const strands = FUZZ.map(() => new Path2D());
-  const over = new Path2D();
-  for (let k = 1; k < pts.length; k++) {
-    const [ax, ay] = pts[k - 1] ?? [0, 0];
-    const [bx, by] = pts[k] ?? [0, 0];
-    const len = Math.hypot(bx - ax, by - ay);
-    if (len < 0.01) continue;
-    const ux = (bx - ax) / len;
-    const uy = (by - ay) / len;
-    const count = Math.ceil(len / (w * 0.08));
+    // Loose fuzz off the edges.
+    const count = Math.ceil(len / (w * 0.12));
     for (let i = 0; i < count; i++) {
       const t = rnd() * len;
       const side = rnd() < 0.5 ? -1 : 1;
-      const nx = -uy * side;
-      const ny = ux * side;
+      const fx = nx * side;
+      const fy = ny * side;
       const off = w * (0.3 + rnd() * 0.2);
-      const bxp = ax + ux * t + nx * off;
-      const byp = ay + uy * t + ny * off;
+      const bxp = ax + ux * t + fx * off;
+      const byp = ay + uy * t + fy * off;
       const turn = (rnd() - 0.5) * 1.8;
-      const dx = nx * Math.cos(turn) - ny * Math.sin(turn);
-      const dy = nx * Math.sin(turn) + ny * Math.cos(turn);
+      const dx = fx * Math.cos(turn) - fy * Math.sin(turn);
+      const dy = fx * Math.sin(turn) + fy * Math.cos(turn);
       const length = w * (0.06 + rnd() * rnd() * 0.75);
       const bend = (rnd() - 0.5) * length * 0.8;
       const path = strands[Math.floor(rnd() * strands.length)] ?? over;
       path.moveTo(bxp, byp);
       path.quadraticCurveTo(bxp + dx * length * 0.5 + ux * bend, byp + dy * length * 0.5 + uy * bend, bxp + dx * length, byp + dy * length);
     }
-    for (let i = 0; i < count * 0.5; i++) {
+    for (let i = 0; i < count * 0.4; i++) {
       const t = rnd() * len;
       const across = (rnd() - 0.5) * w * 0.8;
       const px = ax + ux * t - uy * across;
@@ -373,13 +360,28 @@ export const drawWool = (ctx: Ctx, pts: readonly Pt[], w: number, seed: number, 
       over.lineTo(px + Math.cos(a) * length, py + Math.sin(a) * length);
     }
   }
-  ctx.lineWidth = Math.max(0.45, w * 0.03);
-  strands.forEach((path, i) => {
-    ctx.strokeStyle = FUZZ[i] ?? WOOL.body;
-    ctx.stroke(path);
-  });
-  ctx.strokeStyle = 'rgba(255, 130, 130, 0.35)';
-  ctx.stroke(over);
+  if (fuzz) {
+    ctx.lineWidth = Math.max(0.5, w * 0.04);
+    ctx.strokeStyle = WOOL.fibreDark;
+    ctx.stroke(fibresDark);
+    ctx.strokeStyle = WOOL.fibreLight;
+    ctx.stroke(fibresLight);
+  }
+  ctx.strokeStyle = WOOL.twistDark;
+  ctx.lineWidth = Math.max(0.8, w * 0.11);
+  ctx.stroke(dark);
+  ctx.strokeStyle = WOOL.twistLight;
+  ctx.lineWidth = Math.max(0.7, w * 0.08);
+  ctx.stroke(light);
+  if (fuzz) {
+    ctx.lineWidth = Math.max(0.45, w * 0.03);
+    strands.forEach((path, i) => {
+      ctx.strokeStyle = FUZZ[i] ?? WOOL.body;
+      ctx.stroke(path);
+    });
+    ctx.strokeStyle = 'rgba(255, 130, 130, 0.35)';
+    ctx.stroke(over);
+  }
   ctx.restore();
 };
 
@@ -419,7 +421,6 @@ export const drawTape = (ctx: Ctx, x: number, y: number, angle: number, len: num
   path.lineTo(-hl, hw);
   for (let i = 1; i <= teeth; i++) path.lineTo(-hl + (i % 2 ? -tear : tear) * (0.4 + rnd()), hw - (i / teeth) * wid);
   path.closePath();
-
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
@@ -439,241 +440,76 @@ export const drawTape = (ctx: Ctx, x: number, y: number, angle: number, len: num
   ctx.strokeStyle = 'rgba(90, 90, 80, 0.35)';
   ctx.lineWidth = 0.9;
   ctx.stroke(path);
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(-hl + tear, -hw + 1.2);
-  ctx.lineTo(hl - tear, -hw + 1.2);
-  ctx.stroke();
   ctx.restore();
 };
 
-// ---------------------------------------------------------------- buttons
+// ------------------------------------------------------------ thread layers
 
-/** Button shapes and materials. Each pattern mixes them, like a tin of odd buttons. */
-type Shape = 'round' | 'square' | 'flower' | 'hex' | 'shank';
-type Material = {
-  base: string;
-  light: string;
-  dark: string;
-  /** Number colour and the halo behind it, chosen for contrast on this material. */
-  text: string;
-  halo: string;
-  grain?: boolean;
-  pearl?: boolean;
-};
-type ButtonStyle = { shape: Shape; holes: 0 | 2 | 4; material: Material };
+/** A segment's fibre seed depends only on where it is, so it redraws identically. */
+const segmentSeed = (thread: readonly number[], k: number): number =>
+  ((k * 7919) ^ ((thread[k] ?? 0) * 131) ^ ((thread[k - 1] ?? 0) * 17)) >>> 0;
 
-const MATERIALS: Material[] = [
-  { base: '#24345E', light: '#5B76C2', dark: '#0F1630', text: '#FFFFFF', halo: 'rgba(6, 10, 26, 0.75)' },
-  { base: '#E2A51F', light: '#FFD66A', dark: '#8F6406', text: '#1D1505', halo: 'rgba(255, 238, 190, 0.7)' },
-  { base: '#B07843', light: '#DDAA72', dark: '#5E3815', text: '#FFFFFF', halo: 'rgba(48, 24, 6, 0.85)', grain: true },
-  { base: '#EDE6DA', light: '#FFFFFF', dark: '#B9AE9C', text: '#1B1A20', halo: 'rgba(255, 255, 255, 0.8)', pearl: true },
-  { base: '#2E8C6C', light: '#79CCAA', dark: '#134634', text: '#FFFFFF', halo: 'rgba(5, 30, 20, 0.8)' },
-  { base: '#1E1D22', light: '#5A5862', dark: '#08080A', text: '#FFFFFF', halo: 'rgba(0, 0, 0, 0.8)' },
-  { base: '#D9473A', light: '#FF8C7C', dark: '#7C1A12', text: '#FFFFFF', halo: 'rgba(60, 8, 4, 0.85)' },
-  { base: '#7A4FB8', light: '#B79AE6', dark: '#3A1E66', text: '#FFFFFF', halo: 'rgba(24, 8, 48, 0.8)' },
-];
-const BRASS: Material = { base: '#C79A3A', light: '#FFE59A', dark: '#6E4F0E', text: '#1E1503', halo: 'rgba(255, 240, 200, 0.75)' };
-const SHAPES: { shape: Shape; holes: 0 | 2 | 4 }[] = [
-  { shape: 'round', holes: 4 },
-  { shape: 'round', holes: 2 },
-  { shape: 'square', holes: 4 },
-  { shape: 'flower', holes: 2 },
-  { shape: 'hex', holes: 4 },
-  { shape: 'shank', holes: 0 },
-];
-
-/** The same pattern always gets the same buttons. */
-export const buttonStyles = (pattern: Pattern): ButtonStyle[] => {
-  let seed = 7;
-  for (const ch of pattern.id) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
-  const rnd = seeded(seed);
-  const materials = [...MATERIALS].sort(() => rnd() - 0.5);
-  const shapes = [...SHAPES].sort(() => rnd() - 0.5);
-  return pattern.buttons.map((_, i) => {
-    const form = shapes[i % shapes.length] ?? { shape: 'round', holes: 4 };
-    const material = form.shape === 'shank' ? BRASS : (materials[i % materials.length] ?? BRASS);
-    return { ...form, material };
-  });
-};
-
-/** The outline of a button shape, centred on (x, y) with radius r. */
-const buttonPath = (shape: Shape, x: number, y: number, r: number): Path2D => {
-  const p = new Path2D();
-  if (shape === 'square') {
-    const s = r * 0.9;
-    p.roundRect(x - s, y - s, s * 2, s * 2, r * 0.36);
-  } else if (shape === 'flower') {
-    const steps = 96;
-    for (let i = 0; i <= steps; i++) {
-      const a = (i / steps) * Math.PI * 2;
-      const rr = r * (0.9 + 0.1 * Math.cos(a * 8));
-      if (i === 0) p.moveTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
-      else p.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
-    }
-    p.closePath();
-  } else if (shape === 'hex') {
-    const corner = r * 0.16;
+/**
+ * Draw the thread between point indices `from` and `to`. The thread is split where it comes
+ * back to a cross-stitch square, so the second pass is drawn over the first.
+ */
+export const drawThreadRange = (
+  ctx: Ctx,
+  geo: Geometry,
+  board: Board,
+  thread: readonly number[],
+  from: number,
+  to: number
+): void => {
+  if (to <= from) return;
+  const w = woolWidth(geo);
+  let start = from;
+  const flush = (end: number) => {
+    if (end <= start) return;
     const pts: Pt[] = [];
-    for (let i = 0; i < 6; i++) {
-      const a = (i / 6) * Math.PI * 2 + Math.PI / 6;
-      pts.push([x + Math.cos(a) * r * 0.98, y + Math.sin(a) * r * 0.98]);
+    const seeds: number[] = [];
+    for (let i = start; i <= end; i++) {
+      pts.push(centre(geo, thread[i] ?? 0));
+      seeds.push(segmentSeed(thread, i));
     }
-    const last = pts[5] ?? [x, y];
-    const first = pts[0] ?? [x, y];
-    p.moveTo((last[0] + first[0]) / 2, (last[1] + first[1]) / 2);
-    for (let i = 0; i < 6; i++) {
-      const a = pts[i] ?? [x, y];
-      const b = pts[(i + 1) % 6] ?? [x, y];
-      p.arcTo(a[0], a[1], (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, corner);
+    drawWool(ctx, pts, w, { seeds });
+  };
+  for (let i = from + 1; i <= to; i++) {
+    const c = thread[i] ?? 0;
+    if (board.isCross[c] && thread.indexOf(c) < i) {
+      flush(i - 1);
+      start = i - 1;
     }
-    p.closePath();
-  } else {
-    p.arc(x, y, r, 0, Math.PI * 2);
   }
-  return p;
+  flush(to);
 };
 
-/** A real sew-through or shank button, with a number on its face. */
-const drawButton = (ctx: Ctx, geo: Geometry, x: number, y: number, n: number, style: ButtonStyle): void => {
-  const r = geo.cell * 0.4;
-  const { material: m, shape } = style;
-  const outline = buttonPath(shape, x, y, r);
+export const newLayer = (geo: Geometry): [HTMLCanvasElement, Ctx | null] => newCanvas(geo);
 
-  // Cast shadow on the paper.
-  ctx.save();
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.36)';
-  ctx.shadowBlur = r * 0.4 * geo.dpr;
-  ctx.shadowOffsetX = r * 0.06 * geo.dpr;
-  ctx.shadowOffsetY = r * 0.2 * geo.dpr;
-  ctx.fillStyle = m.base;
-  ctx.fill(outline);
-  ctx.restore();
-
-  // Raised rim: lit from the top left.
-  const rim = ctx.createLinearGradient(x - r, y - r, x + r, y + r);
-  rim.addColorStop(0, m.light);
-  rim.addColorStop(0.5, m.base);
-  rim.addColorStop(1, m.dark);
-  ctx.fillStyle = rim;
-  ctx.fill(outline);
-
-  ctx.save();
-  ctx.clip(outline);
-  if (m.pearl) {
-    // Mother-of-pearl: soft bands of pink, green and blue.
-    const sheen = ctx.createLinearGradient(x - r, y + r * 0.3, x + r, y - r * 0.3);
-    sheen.addColorStop(0, 'rgba(255, 190, 210, 0.35)');
-    sheen.addColorStop(0.35, 'rgba(200, 255, 235, 0.3)');
-    sheen.addColorStop(0.7, 'rgba(190, 210, 255, 0.35)');
-    sheen.addColorStop(1, 'rgba(255, 230, 200, 0.3)');
-    ctx.fillStyle = sheen;
-    ctx.fillRect(x - r, y - r, r * 2, r * 2);
-  }
-  if (m.grain) {
-    // Wood grain: wavy rings.
-    const rnd = seeded(n * 97 + 3);
-    ctx.strokeStyle = 'rgba(70, 38, 12, 0.32)';
-    ctx.lineWidth = 0.8;
-    for (let k = -6; k <= 6; k++) {
-      const off = (k / 6) * r + (rnd() - 0.5) * r * 0.08;
-      ctx.beginPath();
-      ctx.moveTo(x - r, y + off);
-      ctx.bezierCurveTo(x - r * 0.3, y + off - r * 0.15, x + r * 0.3, y + off + r * 0.15, x + r, y + off - r * 0.05);
-      ctx.stroke();
-    }
-  }
-  ctx.restore();
-
-  if (shape === 'shank') {
-    // A domed metal button: bright crown, no holes.
-    const dome = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.05, x, y, r);
-    dome.addColorStop(0, '#FFF8D6');
-    dome.addColorStop(0.3, m.light);
-    dome.addColorStop(0.75, m.base);
-    dome.addColorStop(1, m.dark);
-    ctx.fillStyle = dome;
-    ctx.fill(outline);
-    ctx.strokeStyle = 'rgba(80, 56, 10, 0.5)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(x, y, r * 0.78, 0, Math.PI * 2);
-    ctx.stroke();
-  } else {
-    // Dished centre: shaded the opposite way to the rim, so it reads as sunk.
-    const inner = buttonPath(shape, x, y, r * 0.76);
-    const dish = ctx.createLinearGradient(x - r, y - r, x + r, y + r);
-    dish.addColorStop(0, m.dark);
-    dish.addColorStop(0.55, m.base);
-    dish.addColorStop(1, m.light);
-    ctx.globalAlpha = 0.85;
-    ctx.fillStyle = dish;
-    ctx.fill(inner);
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = m.base;
-    ctx.fill(buttonPath(shape, x, y, r * 0.66));
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
-    ctx.lineWidth = 1;
-    ctx.stroke(buttonPath(shape, x + 0.4, y + 0.6, r * 0.76));
-
-    // Thread holes, above and below the number so they never cover it.
-    const holes: Pt[] =
-      style.holes === 4
-        ? [
-            [-0.3, -0.5],
-            [0.3, -0.5],
-            [-0.3, 0.5],
-            [0.3, 0.5],
-          ]
-        : [
-            [0, -0.5],
-            [0, 0.5],
-          ];
-    const hr = Math.max(1.3, r * 0.085);
-    for (const [hx, hy] of holes) {
-      const px = x + hx * r;
-      const py = y + hy * r;
-      ctx.fillStyle = 'rgba(12, 10, 14, 0.85)';
-      ctx.beginPath();
-      ctx.arc(px, py, hr, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-      ctx.lineWidth = 0.8;
-      ctx.beginPath();
-      ctx.arc(px, py, hr, 0.1 * Math.PI, 0.9 * Math.PI);
-      ctx.stroke();
-    }
-  }
-
-  // Highlight on the top-left rim.
-  ctx.save();
-  ctx.clip(outline);
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+/** A plain black button with a white number. */
+const drawButton = (ctx: Ctx, geo: Geometry, x: number, y: number, n: number, reached: boolean): void => {
+  const r = geo.cell * 0.34;
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
   ctx.beginPath();
-  ctx.ellipse(x - r * 0.42, y - r * 0.55, r * 0.38, r * 0.14, -0.6, 0, Math.PI * 2);
+  ctx.arc(x + r * 0.05, y + r * 0.14, r, 0, Math.PI * 2);
   ctx.fill();
-  ctx.restore();
-
+  ctx.fillStyle = '#1C1B20';
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  if (reached) {
+    ctx.strokeStyle = '#CC1A2E';
+    ctx.lineWidth = Math.max(2.5, r * 0.16);
+    ctx.beginPath();
+    ctx.arc(x, y, r + ctx.lineWidth * 0.4, 0, Math.PI * 2);
+    ctx.stroke();
+  }
   const fontPx = Math.max(16, Math.round(geo.cell * 0.38));
   ctx.font = `700 ${fontPx}px "Space Grotesk", system-ui, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.lineJoin = 'round';
-  ctx.strokeStyle = m.halo;
-  ctx.lineWidth = Math.max(2.5, fontPx * 0.2);
-  ctx.strokeText(String(n), x, y + 1);
-  ctx.fillStyle = m.text;
+  ctx.fillStyle = '#FFFFFF';
   ctx.fillText(String(n), x, y + 1);
-};
-
-const ringPoints = (x: number, y: number, r: number, count: number): Pt[] => {
-  const pts: Pt[] = [];
-  for (let i = 0; i <= count; i++) {
-    const a = (i / count) * Math.PI * 2 - Math.PI / 2;
-    pts.push([x + Math.cos(a) * r, y + Math.sin(a) * r]);
-  }
-  return pts;
 };
 
 /** Inward-pointing ink chevrons on two sides of a cell, showing the pass still owed. */
@@ -709,35 +545,22 @@ const owedPass = (ctx: Ctx, x: number, y: number, cell: number, horizontal: bool
   ctx.restore();
 };
 
-/**
- * Split the thread where it comes back to a cross-stitch cell, so the second pass is drawn
- * over the first and the crossing shows.
- */
-const runsOf = (board: Board, thread: readonly number[]): number[][] => {
-  const runs: number[][] = [];
-  let current: number[] = [];
-  const seen = new Set<number>();
-  thread.forEach((c, i) => {
-    const before = thread[i - 1];
-    if (board.isCross[c] && seen.has(c) && before !== undefined) {
-      runs.push(current);
-      current = [before];
-    }
-    seen.add(c);
-    current.push(c);
-  });
-  runs.push(current);
-  return runs;
+/** State that decides the top layer, so it is redrawn only when one of these changes. */
+export const topLayerKey = (board: Board, thread: readonly number[], solved: boolean): string => {
+  let reached = 0;
+  for (const c of thread) if ((board.buttonIndex[c] ?? -1) >= 0) reached += 1;
+  const crosses: string[] = [];
+  for (let c = 0; c < board.count; c++) {
+    if (!board.isCross[c]) continue;
+    const first = thread.indexOf(c);
+    const second = first < 0 ? -1 : thread.indexOf(c, first + 1);
+    crosses.push(first < 0 ? '0' : second < 0 ? `1${thread[first - 1] ?? thread[first + 1] ?? ''}` : '2');
+  }
+  return `${reached}|${crosses.join(',')}|${solved}|${thread[1] ?? ''}|${solved ? thread.length : ''}`;
 };
 
-/** Everything that changes only when the thread changes: wool, tape, buttons, marks. */
-export const drawThreadLayer = (
-  geo: Geometry,
-  board: Board,
-  styles: readonly ButtonStyle[],
-  thread: readonly number[],
-  solved: boolean
-): HTMLCanvasElement => {
+/** Above the wool: the taped tail at button 1, owed-pass marks, buttons, and the end tape. */
+export const drawTopLayer = (geo: Geometry, board: Board, thread: readonly number[], solved: boolean): HTMLCanvasElement => {
   const [canvas, ctx] = newCanvas(geo);
   if (!ctx) return canvas;
   const { cell } = geo;
@@ -755,42 +578,27 @@ export const drawThreadLayer = (
     cy = -Math.sign(ny - sy) || -1;
   }
   const tailEnd: Pt = [sx + cx * cell * 0.42, sy + cy * cell * 0.42];
-  drawWool(ctx, [[sx, sy], tailEnd], w, first * 7 + 3);
+  drawWool(ctx, [[sx, sy], tailEnd], w, { seeds: [0, first * 7 + 3] });
   frayedEnd(ctx, tailEnd[0], tailEnd[1], cx / Math.SQRT2, cy / Math.SQRT2, w, first);
 
-  runsOf(board, thread).forEach((run, i) => {
-    drawWool(ctx, run.map((c) => centre(geo, c)), w, (run[0] ?? 0) * 977 + i * 131 + 11);
-  });
-
-  // Cross-stitch cells with one pass done: show the pass still owed, above the wool.
-  const passes = new Map<number, number>();
-  thread.forEach((c, i) => {
-    if (!board.isCross[c]) return;
-    passes.set(c, (passes.get(c) ?? 0) + 1);
-    if ((passes.get(c) ?? 0) === 1) {
-      const neighbour = thread[i - 1] ?? thread[i + 1];
-      const dir = neighbour === undefined ? -1 : directionBetween(board, neighbour, c);
-      passes.set(c, dir === RIGHT || dir === LEFT ? 1 : -1);
-    } else {
-      passes.set(c, 2);
-    }
-  });
-  for (const [c, state] of passes) {
-    if (state === 2) continue;
+  // Cross-stitch squares with one pass done: show the pass still owed.
+  for (let c = 0; c < board.count; c++) {
+    if (!board.isCross[c]) continue;
+    const at = thread.indexOf(c);
+    if (at < 0 || thread.indexOf(c, at + 1) >= 0) continue;
+    const neighbour = thread[at - 1] ?? thread[at + 1];
+    const dir = neighbour === undefined ? -1 : directionBetween(board, neighbour, c);
     const [x, y] = centre(geo, c);
-    // state 1: first pass went across, so the owed pass is up-down.
-    owedPass(ctx, x, y, cell, state !== 1);
+    owedPass(ctx, x, y, cell, !(dir === RIGHT || dir === LEFT));
   }
 
   const reached = new Set(thread);
   board.buttons.forEach((c, n) => {
     const [x, y] = centre(geo, c);
-    drawButton(ctx, geo, x, y, n + 1, styles[n] ?? { shape: 'round', holes: 4, material: BRASS });
-    if (reached.has(c)) drawWool(ctx, ringPoints(x, y, cell * 0.45, 30), w * 0.2, c * 13 + 5);
+    drawButton(ctx, geo, x, y, n + 1, reached.has(c));
   });
 
   drawTape(ctx, sx + cx * cell * 0.4, sy + cy * cell * 0.4, Math.atan2(cy, cx) + Math.PI / 2 + 0.12, cell * 0.78, cell * 0.32, first + 101);
-
   if (solved && thread.length >= 2) {
     const [ax, ay] = centre(geo, thread[thread.length - 2] ?? 0);
     const [bx, by] = centre(geo, thread[thread.length - 1] ?? 0);
@@ -800,44 +608,6 @@ export const drawThreadLayer = (
 };
 
 // ----------------------------------------------------------- live layer
-
-/** A steel needle. The eye sits at (x, y) and the point aims along (ux, uy). */
-export const drawNeedle = (ctx: Ctx, geo: Geometry, x: number, y: number, ux: number, uy: number, len: number): void => {
-  const w = Math.max(3, len * 0.08);
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(Math.atan2(uy, ux));
-  const shape = new Path2D();
-  shape.moveTo(-w * 0.9, -w * 0.5);
-  shape.lineTo(len * 0.72, -w * 0.4);
-  shape.lineTo(len, 0);
-  shape.lineTo(len * 0.72, w * 0.4);
-  shape.lineTo(-w * 0.9, w * 0.5);
-  shape.arc(-w * 0.9, 0, w * 0.5, Math.PI / 2, -Math.PI / 2);
-  ctx.save();
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-  ctx.shadowBlur = 3 * geo.dpr;
-  ctx.shadowOffsetX = 1.5 * geo.dpr;
-  ctx.shadowOffsetY = 3 * geo.dpr;
-  const steel = ctx.createLinearGradient(0, -w / 2, 0, w / 2);
-  steel.addColorStop(0, '#F7F9FB');
-  steel.addColorStop(0.4, '#B9C0C8');
-  steel.addColorStop(1, '#5E666F');
-  ctx.fillStyle = steel;
-  ctx.fill(shape);
-  ctx.restore();
-  ctx.fillStyle = 'rgba(30, 30, 36, 0.85)';
-  ctx.beginPath();
-  ctx.ellipse(-w * 0.1, 0, w * 0.75, w * 0.18, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-  ctx.lineWidth = 0.7;
-  ctx.beginPath();
-  ctx.moveTo(w, -w * 0.22);
-  ctx.lineTo(len * 0.78, -w * 0.12);
-  ctx.stroke();
-  ctx.restore();
-};
 
 export type Live = {
   /** True while a finger is drawing. */
@@ -854,40 +624,51 @@ export type Live = {
   reducedMotion: boolean;
   /** Squares the thread still owes, hatched when the last button was reached too early. */
   empty: readonly number[];
-  /** Square the practice board's hand points at, or -1. */
-  guideCell: number;
+  /** Practice board only: the next squares to take, in order, or the one square to unpick back to. */
+  guide: readonly number[];
+  guideBack: boolean;
 };
 
-/** A white-gloved pointing hand, fingertip at (x, y). */
-const drawHand = (ctx: Ctx, geo: Geometry, x: number, y: number, now: number, still: boolean): void => {
-  const u = geo.cell * 0.5;
-  const bob = still ? 0 : Math.sin(now / 240) * u * 0.12;
-  ctx.save();
-  ctx.translate(x + u * 0.05, y + bob);
-  ctx.rotate(-0.4);
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-  ctx.shadowBlur = 4 * geo.dpr;
-  ctx.shadowOffsetX = 2 * geo.dpr;
-  ctx.shadowOffsetY = 4 * geo.dpr;
-  const glove = new Path2D();
-  glove.roundRect(-0.15 * u, 0, 0.3 * u, 0.95 * u, 0.15 * u); // pointing finger
-  glove.roundRect(-0.28 * u, 0.62 * u, 0.86 * u, 0.78 * u, 0.26 * u); // palm
-  glove.roundRect(0.1 * u, 0.5 * u, 0.24 * u, 0.42 * u, 0.12 * u); // folded fingers
-  glove.roundRect(0.3 * u, 0.56 * u, 0.24 * u, 0.4 * u, 0.12 * u);
-  glove.roundRect(-0.5 * u, 0.82 * u, 0.4 * u, 0.24 * u, 0.12 * u); // thumb
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fill(glove);
-  ctx.restore();
-  ctx.save();
-  ctx.translate(x + u * 0.05, y + bob);
-  ctx.rotate(-0.4);
-  ctx.strokeStyle = '#16151A';
-  ctx.lineWidth = Math.max(1.6, u * 0.07);
-  ctx.lineJoin = 'round';
-  ctx.stroke(glove);
+/** Inside a square: a soft wash and an arrow pointing the way the thread goes. */
+const guideSquare = (ctx: Ctx, geo: Geometry, cell: number, from: number, strength: number, back: boolean): void => {
+  const { cell: size } = geo;
+  const x0 = geo.pad + (cell % geo.size) * size;
+  const y0 = geo.pad + Math.floor(cell / geo.size) * size;
+  const inset = size * 0.08;
+  ctx.fillStyle = back ? `rgba(22, 21, 26, ${0.12 * strength})` : `rgba(245, 158, 11, ${0.5 * strength})`;
   ctx.beginPath();
-  ctx.moveTo(-0.2 * u, 1.18 * u);
-  ctx.lineTo(0.5 * u, 1.18 * u);
+  ctx.roundRect(x0 + inset, y0 + inset, size - inset * 2, size - inset * 2, size * 0.14);
+  ctx.fill();
+  if (back) {
+    // The square to go back to: a strong dashed outline so it reads over the wool.
+    ctx.save();
+    ctx.strokeStyle = '#16151A';
+    ctx.lineWidth = Math.max(2.5, size * 0.06);
+    ctx.setLineDash([size * 0.1, size * 0.07]);
+    ctx.stroke();
+    ctx.restore();
+  }
+  if (from < 0) return;
+  const [ax, ay] = centre(geo, from);
+  const [bx, by] = centre(geo, cell);
+  const len = Math.hypot(bx - ax, by - ay) || 1;
+  const ux = (bx - ax) / len;
+  const uy = (by - ay) / len;
+  const tipX = bx + ux * size * 0.12;
+  const tipY = by + uy * size * 0.12;
+  const s = size * 0.17;
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, 0.35 + strength);
+  ctx.strokeStyle = '#16151A';
+  ctx.lineWidth = Math.max(2.5, size * 0.07);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(tipX - ux * s - uy * s, tipY - uy * s + ux * s);
+  ctx.lineTo(tipX, tipY);
+  ctx.lineTo(tipX - ux * s + uy * s, tipY - uy * s - ux * s);
+  ctx.moveTo(tipX - ux * s * 2.1, tipY - uy * s * 2.1);
+  ctx.lineTo(tipX, tipY);
   ctx.stroke();
   ctx.restore();
 };
@@ -897,8 +678,10 @@ export const drawFrame = (
   ctx: Ctx,
   geo: Geometry,
   thread: readonly number[],
-  backdrop: HTMLCanvasElement,
-  layer: HTMLCanvasElement,
+  /** Paper and wool, drawn first. */
+  layers: readonly HTMLCanvasElement[],
+  /** Buttons and marks, drawn over the practice guide so numbers stay readable. */
+  top: HTMLCanvasElement,
   live: Live,
   now: number
 ): boolean => {
@@ -906,12 +689,24 @@ export const drawFrame = (
   let animating = false;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-  ctx.drawImage(backdrop, 0, 0);
-  ctx.drawImage(layer, 0, 0);
+  for (const layer of layers) ctx.drawImage(layer, 0, 0);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   const head = thread[thread.length - 1] ?? 0;
   const [hx, hy] = centre(geo, head);
+
+  if (live.guide.length > 0) {
+    const pulse = live.reducedMotion ? 1 : 0.75 + 0.25 * Math.sin(now / 220);
+    animating = !live.reducedMotion;
+    let from = head;
+    live.guide.forEach((c, i) => {
+      guideSquare(ctx, geo, c, from, i === 0 ? pulse : 0.55 / (i + 1), live.guideBack);
+      from = c;
+    });
+  }
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(top, 0, 0);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   if (!live.reducedMotion && live.popCell >= 0 && now - live.popAt < 140) {
     animating = true;
@@ -924,34 +719,18 @@ export const drawFrame = (
     ctx.stroke();
   }
 
-  if (!live.solved) {
+  if (!live.solved && live.dragging) {
+    // The wool lifts off the page and follows the finger.
     const fx = Math.min(Math.max(live.fx, geo.pad), geo.edge - geo.pad);
     const fy = Math.min(Math.max(live.fy, geo.pad), geo.edge - geo.pad);
-    const reach = Math.hypot(fx - hx, fy - hy);
-    if (live.dragging && reach > cell * 0.18) {
-      // The wool lifts off the page and follows the finger, with the needle at its end.
-      const ux = (fx - hx) / reach;
-      const uy = (fy - hy) / reach;
-      drawWool(ctx, [[hx, hy], [fx, fy]], woolWidth(geo) * 0.92, 4242, 1);
-      drawNeedle(ctx, geo, fx, fy, ux, uy, cell * 0.8);
-    } else {
-      const before = thread[thread.length - 2];
-      let ux = Math.SQRT1_2;
-      let uy = -Math.SQRT1_2;
-      if (before !== undefined) {
-        const [bx, by] = centre(geo, before);
-        const d = Math.hypot(hx - bx, hy - by) || 1;
-        const a = Math.atan2((hy - by) / d, (hx - bx) / d) - 0.65;
-        ux = Math.cos(a);
-        uy = Math.sin(a);
-      }
-      drawNeedle(ctx, geo, hx + ux * cell * 0.12, hy + uy * cell * 0.12, ux, uy, cell * 0.62);
+    if (Math.hypot(fx - hx, fy - hy) > cell * 0.18) {
+      drawWool(ctx, [[hx, hy], [fx, fy]], woolWidth(geo) * 0.92, { lift: 1, fuzz: false });
     }
   }
 
   if (live.empty.length > 0) {
     // Marigold pencil hatching on every square still to fill, gently pulsing.
-    animating = !live.reducedMotion;
+    animating = animating || !live.reducedMotion;
     const pulse = live.reducedMotion ? 0.8 : 0.6 + 0.3 * Math.sin(now / 260);
     ctx.save();
     ctx.globalAlpha = pulse;
@@ -978,12 +757,6 @@ export const drawFrame = (
       ctx.stroke();
     }
     ctx.restore();
-  }
-
-  if (live.guideCell >= 0) {
-    animating = !live.reducedMotion;
-    const [gx, gy] = centre(geo, live.guideCell);
-    drawHand(ctx, geo, gx, gy, now, live.reducedMotion);
   }
 
   if (live.hintCell >= 0 && now < live.hintUntil) {

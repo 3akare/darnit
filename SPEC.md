@@ -176,7 +176,7 @@ Crowd replay replaces Zip's solution video and only unlocks after you finish, so
 
 First-time players get one guided board; after that the game gets out of the way.
 
-- **First play ever:** a 4×4 practice pattern before today's. A hand points to each next cell in turn until the thread reaches the last button. A Skip button is always visible.
+- **First play ever:** one line on the goal ("Draw one thread from 1 to 4, passing the numbers in order, and fill every square on the way."), then a 4×4 practice pattern before today's. The grid itself shows the way: the next three squares light up in orange, fading, each with an arrow pointing along the route; a wrong turn lights the square to unpick back to instead. No hand or pointer. A Skip button is always visible.
 - **Then today's pattern**, with no guidance: just 1, 2, 3.
 - **First board with a cross-stitch cell:** a 3-second looping animation of thread crossing straight through, shown once over the board. Tap anywhere to dismiss.
 - **Stall nudge:** if a new player hasn't stitched within 20 s, button 1 pulses. No text walls anywhere.
@@ -199,8 +199,8 @@ Materials:
 
 - **Paper:** white sketchbook paper with a fine grain, faint fibres and specks. One look in every system theme: the game is always on white paper, with no dark mode.
 - **Board:** a pencil grid drawn straight onto the paper, clearly visible, with a hole pricked through the paper at every grid corner, like paper embroidery.
-- **Thread:** red wool about a third of a cell wide: round shading, twisted plies, fine fibres and loose fuzz, and a soft shadow on the paper. Its cut end at button 1 is frayed and taped down with a strip of clear tape; the last end gets taped when the pattern is solved. While dragging, the wool lifts off the page and follows the finger, with a steel needle at its end.
-- **Buttons:** real buttons, mixed like a tin of odd ones: round, square, scalloped flower, hexagon and domed brass shank shapes, in navy, mustard, wood, mother-of-pearl, green, black, red and purple. Raised rim, dished centre, thread holes above and below the number so they never cover it. The same pattern always gets the same buttons. When the wool reaches one, a thin strand of wool rings it.
+- **Thread:** red wool about a third of a cell wide: round shading, twisted plies, fine fibres and loose fuzz, and a soft shadow on the paper. Its cut end at button 1 is frayed and taped down with a strip of clear tape; the last end gets taped when the pattern is solved. While dragging, the wool lifts off the page and follows the finger. No needle.
+- **Buttons:** plain black circles with bold white numbers (David, Nov 13: the mixed real buttons looked wrong). When the wool reaches one, a red ring outlines it.
 - **Seams:** black thread in a running stitch along the cell edge, much heavier than the pencil grid.
 - **Cross-stitch cells:** a pencil X in a dashed pencil ring. After the first pass, a dashed ink ring and two ink chevrons are drawn on top of the wool, pointing along the pass still owed, so the cell never disappears under the thread. On the second pass the wool crosses over the first strand.
 - **Logo:** embroidered varsity lettering, like a college hoodie: "DARNIT!" in heavy slab capitals (Alfa Slab One) on a gentle arch, each letter a satin-stitch fill in its own bright, fully saturated colour (red, amber, green, sky blue, blue, magenta, orange), with a white twill outline, a dark edge and a raised shadow. Players still read the name as DarnIt!.

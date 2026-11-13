@@ -94,6 +94,17 @@ image for an account with no custom avatar.
 | Results are reached after the solve moment | The finished thread stays on screen for 1.6 s, then the Results page replaces the play screen. Reopening a solved post goes straight to Results | Solve animation (thread tightens, board shrinks into a quilt square) is still to do in the visual pass |
 | Personal quilt squares: "that day's pattern sewn in your thread colour" | Sewn as a simple line in wool red; unlockable colours are P2 | None |
 
+### From David's play test of the Results page and onboarding (Nov 13)
+
+| Feedback | What changed |
+| --- | --- |
+| The mixed real buttons look wrong; prefers the plain black circles on the heatmap | Game buttons are plain black circles with white numbers, a red ring once reached (SPEC.md updated) |
+| The drag no longer feels good | Measured: with the CPU slowed to mid-range-phone speed, the worst frames during a drag took 350 to 480 ms, because every stitch redrew the whole thread with all its fuzz plus every button. The board now keeps the paper and older wool cached, redraws only the newest few stitches, and redraws buttons only when one is reached. Same test after: worst frame 67 ms, typical stitch 2 ms |
+| Remove the needle | Removed, at rest and while dragging (SPEC.md updated) |
+| No pointing hand in the practice board; let the grid show the way | The next three squares light up orange with arrows; a wrong turn outlines the square to unpick back to (SPEC.md updated) |
+| Landing on the practice board and the Results page cold made little sense | The practice board opens with one line on the goal. Every Results section has a one-line explanation, and the heatmap is now "Today's trickiest spot", drawn over the day's solution so the orange squares read as places on the route |
+| The heatmap feels useless | Reworked as above. Whether to keep it is David's call; SPEC.md makes it the main Reddit-y feature |
+
 ### From the account suspension
 
 | SPEC.md says | What happened | Change to SPEC.md |

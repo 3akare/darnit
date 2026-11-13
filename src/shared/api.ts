@@ -174,6 +174,8 @@ export type ResultsResponse =
       community: QuiltSquare[];
       /** Players who unpicked back to each square today, and how many solved. */
       heatmap: { counts: number[]; players: number };
+      /** The day's thread, shown under the heatmap. Only sent after the player has finished. */
+      solution: number[];
       serverNow: number;
       nextResetAt: number;
     }

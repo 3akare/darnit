@@ -387,6 +387,12 @@ body {
   font-weight: 700;
   border-bottom: 2px dashed rgba(204, 26, 46, 0.55);
 }
+.explain {
+  margin: -4px 0 12px;
+  font-size: 14px;
+  color: var(--graphite);
+  text-wrap: pretty;
+}
 .caption {
   margin: 10px 0 0;
   font-size: 14px;
@@ -515,9 +521,14 @@ body {
   text-underline-offset: 4px;
   cursor: pointer;
 }
-.lesson {
+.lesson h2 {
   margin: 0;
   font-size: 20px;
+}
+.lesson p {
+  margin: 4px 0 0;
+  font-size: 15px;
+  text-wrap: pretty;
 }
 .tutorial .status {
   font-size: 16px;

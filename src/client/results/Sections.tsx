@@ -50,6 +50,7 @@ const Row = ({ row }: { row: LeaderRow }) => (
 export const Leaderboard = ({ top, me, solvers }: { top: LeaderRow[]; me: LeaderRow | null; solvers: number }) => (
   <section className="sheet">
     <h3>Today&apos;s leaderboard</h3>
+    <p className="explain">The fastest finishes on today&apos;s pattern. Your row is outlined in red.</p>
     {top.length === 0 ? <p className="fine">Nobody has finished yet.</p> : null}
     <ol className="board-list">
       {top.map((row) => (
@@ -67,7 +68,17 @@ export const Leaderboard = ({ top, me, solvers }: { top: LeaderRow[]; me: Leader
   </section>
 );
 
-export const Heatmap = ({ pattern, counts, players }: { pattern: Pattern; counts: number[]; players: number }) => {
+export const Heatmap = ({
+  pattern,
+  solution,
+  counts,
+  players,
+}: {
+  pattern: Pattern;
+  solution: number[];
+  counts: number[];
+  players: number;
+}) => {
   const box = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const width = useWidth(box);
@@ -76,21 +87,25 @@ export const Heatmap = ({ pattern, counts, players }: { pattern: Pattern; counts
     if (n > 0 && (hottest < 0 || n > (counts[hottest] ?? 0))) hottest = c;
   });
   useEffect(() => {
-    if (canvas.current && width > 0) drawHeatmap(canvas.current, Math.min(width, 320), pattern, counts, hottest);
-  }, [width, pattern, counts, hottest]);
+    if (canvas.current && width > 0) drawHeatmap(canvas.current, Math.min(width, 320), pattern, solution, counts, hottest);
+  }, [width, pattern, solution, counts, hottest]);
 
-  let caption = 'Nobody unpicked today. Clean stitching all round.';
+  let caption = 'Nobody took a wrong turn today. Clean stitching all round.';
   if (hottest >= 0) {
     const n = counts[hottest] ?? 0;
     const button = pattern.buttons.indexOf(hottest);
     const where = button >= 0 ? `at button ${button + 1}` : 'at the circled square';
     // SPEC: counts, not percentages, while fewer than 20 have played.
     const who = players >= 20 ? `${Math.round((100 * n) / players)}% of players` : `${n} of ${players} ${players === 1 ? 'player' : 'players'}`;
-    caption = `${who} unpicked ${where}.`;
+    caption = `${who} took a wrong turn ${where} and had to unpick.`;
   }
   return (
     <section className="sheet">
-      <h3>Where players went wrong</h3>
+      <h3>Today&apos;s trickiest spot</h3>
+      <p className="explain">
+        The faint red line is today&apos;s solution. Orange squares are where players went the wrong way and had to go back:
+        the darker, the more players.
+      </p>
       <div ref={box} className="heat-box">
         <canvas ref={canvas} aria-label={caption} />
       </div>
@@ -132,6 +147,7 @@ export const StatsPanel = ({ stats }: { stats: Stats }) => (
 
 type QuiltProps = {
   title: string;
+  explain: string;
   squares: QuiltSquare[];
   kind: QuiltKind;
   today: number;
@@ -145,7 +161,7 @@ const describe = (sq: QuiltSquare, kind: QuiltKind): string => {
   return [`#${sq.day}`, formatTime(sq.timeMs), badge].filter(Boolean).join(' · ');
 };
 
-export const Quilt = ({ title, squares, kind, today }: QuiltProps) => {
+export const Quilt = ({ title, explain, squares, kind, today }: QuiltProps) => {
   const box = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const geo = useRef<QuiltGeometry | null>(null);
@@ -165,6 +181,7 @@ export const Quilt = ({ title, squares, kind, today }: QuiltProps) => {
   return (
     <section className="sheet">
       <h3>{title}</h3>
+      <p className="explain">{explain}</p>
       <div ref={box} className="quilt-box">
         <canvas ref={canvas} onPointerUp={onTap} role="img" aria-label={`${title}: ${squares.length} squares`} />
       </div>

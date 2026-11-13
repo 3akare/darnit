@@ -147,6 +147,7 @@ export const drawHeatmap = (
   canvas: HTMLCanvasElement,
   width: number,
   pattern: Pattern,
+  solution: readonly number[],
   counts: readonly number[],
   hottest: number
 ): void => {
@@ -201,6 +202,22 @@ export const drawHeatmap = (
     }
   }
   ctx.stroke();
+
+  // Today's thread, faint, so the hot squares read as places on the route.
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = 'rgba(204, 26, 46, 0.35)';
+  ctx.lineWidth = cell * 0.22;
+  ctx.beginPath();
+  solution.forEach((c, i) => {
+    const x = pad + ((c % size) + 0.5) * cell;
+    const y = pad + (Math.floor(c / size) + 0.5) * cell;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+  ctx.restore();
 
   ctx.font = `700 ${Math.max(11, Math.round(cell * 0.34))}px "Space Grotesk", system-ui, sans-serif`;
   ctx.textAlign = 'center';

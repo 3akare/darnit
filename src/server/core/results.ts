@@ -105,6 +105,7 @@ export const buildResults = async (
     quilt,
     community,
     heatmap: { counts: await readHeat(store, day.day, pattern.size * pattern.size), players: solvers },
+    solution: pattern.solution,
     serverNow: now,
     nextResetAt: nextResetAt(now),
   };

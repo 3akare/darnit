@@ -48,10 +48,27 @@ export const Results = ({ today, result }: { today: TodayResponse; result: Resul
       {data ? (
         <>
           <Leaderboard top={data.leaderboard.top} me={data.leaderboard.me} solvers={data.leaderboard.solvers} />
-          <Heatmap pattern={data.pattern} counts={data.heatmap.counts} players={data.heatmap.players} />
+          <Heatmap
+            pattern={data.pattern}
+            solution={data.solution}
+            counts={data.heatmap.counts}
+            players={data.heatmap.players}
+          />
           <StatsPanel stats={data.stats} />
-          <Quilt title="Your quilt" squares={data.quilt} kind="personal" today={data.day} />
-          <Quilt title={`r/${data.subredditName} quilt`} squares={data.community} kind="community" today={data.day} />
+          <Quilt
+            title="Your quilt"
+            explain="One square for each day since you started. Solve the day's pattern and its square is sewn in red; miss a day and it stays blank, so an unbroken run is your streak."
+            squares={data.quilt}
+            kind="personal"
+            today={data.day}
+          />
+          <Quilt
+            title={`The r/${data.subredditName} quilt`}
+            explain="Every pattern this community has played, one square per day, sewn green, amber or red for easy, medium or hard. The number in the corner is how many people solved it."
+            squares={data.community}
+            kind="community"
+            today={data.day}
+          />
         </>
       ) : null}
 
