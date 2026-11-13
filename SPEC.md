@@ -197,7 +197,7 @@ A sketchbook page with real craft materials on it: red wool stretched across whi
 
 Materials:
 
-- **Paper:** white sketchbook paper with a fine grain, faint fibres and specks, and a steel ring binding along the top, coming out of punched holes. One look in every system theme: the game is always on white paper, with no dark mode.
+- **Paper:** white sketchbook paper with a fine grain, faint fibres and specks. One look in every system theme: the game is always on white paper, with no dark mode.
 - **Board:** a pencil grid drawn straight onto the paper, clearly visible, with a hole pricked through the paper at every grid corner, like paper embroidery.
 - **Thread:** red wool about a third of a cell wide: round shading, twisted plies, fine fibres and loose fuzz, and a soft shadow on the paper. Its cut end at button 1 is frayed and taped down with a strip of clear tape; the last end gets taped when the pattern is solved. While dragging, the wool lifts off the page and follows the finger, with a steel needle at its end.
 - **Buttons:** real buttons, mixed like a tin of odd ones: round, square, scalloped flower, hexagon and domed brass shank shapes, in navy, mustard, wood, mother-of-pearl, green, black, red and purple. Raised rim, dished centre, thread holes above and below the number so they never cover it. The same pattern always gets the same buttons. When the wool reaches one, a thin strand of wool rings it.
@@ -221,7 +221,7 @@ All text meets 4.5:1 contrast, and button numbers stay at least 16 px on an 8×8
 
 Type: Space Grotesk for everything, with tabular numbers; Alfa Slab One for the logo only. Both bundled with the app rather than loaded from Google.
 
-Scale: the board takes about 90% of the screen width with paper showing round it, so the page never feels pressed against the face.
+Scale: the board is as wide as the page. The play screen stacks from the top (logo, timer, board, status line, controls) and the board shrinks only on screens too short to fit it.
 
 Motion:
 

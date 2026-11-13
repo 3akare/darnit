@@ -12,7 +12,6 @@ const NEEDLES_FOR = { easy: 1, medium: 2, hard: 3 };
 import { askHint, startRun, submitThread } from '../api.ts';
 import { Board } from './Board.tsx';
 import { Icon, Needles } from './Craft.tsx';
-import { Spiral } from './Spiral.tsx';
 import { Logo } from './Logo.tsx';
 
 type Result = { timeMs: number; hints: number; unpicks: number; counted: boolean; note: string };
@@ -164,7 +163,6 @@ export const Play = ({ today, skew }: Props) => {
 
   return (
     <main className="play">
-      <Spiral />
       <header className="masthead">
         <Logo height={58} />
         <div className="meta">

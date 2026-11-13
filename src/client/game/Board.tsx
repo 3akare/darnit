@@ -98,8 +98,7 @@ export const Board = ({ pattern, board, thread, hintCell, hintUntil, solved, loc
 
     const resize = () => {
       const rect = box.getBoundingClientRect();
-      // A little smaller than the space allows, so the board sits on the page with air round it.
-      const edge = Math.floor(Math.min(rect.width * 0.9, rect.height * 0.96));
+      const edge = Math.floor(Math.min(rect.width, rect.height));
       if (edge <= 0) return;
       geo = layout(edge, pattern.size);
       canvas.style.width = `${edge}px`;
