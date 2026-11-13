@@ -1,56 +1,14 @@
-/* Colour tokens from SPEC.md "Visual direction". Light by default, dark when the system or
-   an explicit data-theme asks for it. */
+/* DarnIt! sketchbook look: white paper, red wool, black buttons, embroidered patches.
+   One look in every system theme: the game is always on white paper. */
 :root {
-  --fabric: #f7f3ea;
-  --cloth: #efe9db;
-  --hole: rgba(0, 0, 0, 0.16);
-  --text: #1f1b24;
-  --thread: #ff5a4e;
-  --thread-dark: #b8362c;
-  --seam: #2b2730;
-  --hoop: #d9b48a;
-  --hoop-edge: #b98f63;
-  --button: #ffffff;
-  --line: rgba(31, 27, 36, 0.2);
-  --panel: #fffdf8;
-  --badge: #b8362c;
-  --is-dark: 0;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --fabric: #1b1f3b;
-    --cloth: #262b50;
-    --hole: rgba(255, 255, 255, 0.16);
-    --text: #f4efe6;
-    --thread: #ff6f61;
-    --thread-dark: #a83a31;
-    --seam: #e9e2d6;
-    --hoop: #b98a5e;
-    --hoop-edge: #94693f;
-    --button: #ffffff;
-    --line: rgba(244, 239, 230, 0.24);
-    --panel: #262b50;
-    --badge: #ff6f61;
-    --is-dark: 1;
-    color-scheme: dark;
-  }
-}
-:root[data-theme='dark'] {
-  --fabric: #1b1f3b;
-  --cloth: #262b50;
-  --hole: rgba(255, 255, 255, 0.16);
-  --text: #f4efe6;
-  --thread: #ff6f61;
-  --thread-dark: #a83a31;
-  --seam: #e9e2d6;
-  --hoop: #b98a5e;
-  --hoop-edge: #94693f;
-  --button: #ffffff;
-  --line: rgba(244, 239, 230, 0.24);
-  --panel: #262b50;
-  --badge: #ff6f61;
-  --is-dark: 1;
-  color-scheme: dark;
+  --paper-base: #fcfbf8;
+  --ink: #16151a;
+  --graphite: #5b6070;
+  --wool: #cc1a2e;
+  --wool-dark: #86091a;
+  --marigold: #f59e0b;
+  --note: #fffefa;
+  color-scheme: light;
 }
 
 * {
@@ -63,8 +21,14 @@ body,
   height: 100%;
 }
 body {
-  background: var(--fabric);
-  color: var(--text);
+  color: var(--ink);
+  background-color: var(--paper-base);
+  background-image:
+    radial-gradient(ellipse at 50% 40%, transparent 55%, rgba(60, 50, 40, 0.06) 100%),
+    var(--paper, none);
+  background-size:
+    100% 100%,
+    256px 256px;
   font:
     500 16px/1.35 'Space Grotesk',
     system-ui,
@@ -72,49 +36,111 @@ body {
   font-variant-numeric: tabular-nums;
   -webkit-text-size-adjust: 100%;
 }
-button {
-  font: inherit;
-  font-weight: 700;
-  color: inherit;
-  background: var(--panel);
-  border: 2px solid var(--text);
-  border-radius: 12px;
-  padding: 10px 18px;
-  min-height: 46px;
-  cursor: pointer;
-}
-button:disabled {
-  opacity: 0.38;
-  cursor: default;
-}
-button:active:not(:disabled) {
-  transform: translateY(1px);
-}
-button.primary {
-  background: var(--thread);
-  color: #1f1b24;
-}
 .notice {
   padding: 24px;
   text-align: center;
 }
 
-/* Difficulty: one to three needles. */
-.needles {
+/* Embroidered patches: a solid colour with a satin texture, a stitched border and a
+   raised shadow. Used for every control. */
+.patch {
+  --patch: var(--ink);
+  position: relative;
   display: inline-flex;
-  gap: 5px;
-  vertical-align: middle;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 50px;
+  padding: 10px 20px;
+  border: 0;
+  border-radius: 14px;
+  color: #ffffff;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  background-color: var(--patch);
+  background-image: repeating-linear-gradient(
+    55deg,
+    rgba(255, 255, 255, 0.09) 0 1px,
+    rgba(0, 0, 0, 0.06) 1px 2px,
+    transparent 2px 3px
+  );
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.28),
+    0 7px 14px -4px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
-.needles i {
-  display: block;
-  width: 3px;
-  height: 18px;
+.patch::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 2px dashed rgba(255, 255, 255, 0.72);
+  border-radius: 10px;
+  pointer-events: none;
+}
+.patch:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow:
+    0 0 0 rgba(0, 0, 0, 0.28),
+    0 3px 8px -4px rgba(0, 0, 0, 0.3);
+}
+.patch:focus-visible {
+  outline: 3px solid var(--marigold);
+  outline-offset: 3px;
+}
+.patch:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+.patch.ink {
+  --patch: #1c1b20;
+}
+.patch.cobalt {
+  --patch: #2f5bea;
+}
+.patch.magenta {
+  --patch: #c0247a;
+}
+.patch.wool {
+  --patch: var(--wool);
+}
+.patch .icon {
+  flex: none;
+}
+.patch.cooling {
+  opacity: 0.75;
+}
+.cooldown {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  height: 3px;
+  width: 0;
   border-radius: 2px;
-  background: var(--text);
-  transform: rotate(28deg);
+  background: #ffffff;
+  animation: cooldown linear forwards;
+}
+@keyframes cooldown {
+  to {
+    width: calc(100% - 20px);
+  }
 }
 
-/* Inline feed card: fits the post, nothing scrolls, taps only. */
+/* Difficulty needles */
+.needles {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}
+.needles svg {
+  transform: rotate(24deg);
+}
+
+/* Inline feed card: fits the post, taps only, nothing scrolls. */
 .card {
   height: 100%;
   display: flex;
@@ -122,20 +148,23 @@ button.primary {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  padding: 16px;
+  padding-block: 16px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
   text-align: center;
   overflow: hidden;
 }
-.card h1 {
-  margin: 0;
-  font-size: 30px;
+.card .meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-weight: 700;
 }
 .card p {
   margin: 0;
 }
 
-/* Play screen: fixed to the viewport. The fabric is the only gesture surface. */
+/* Play screen: one fixed page. The board is the only gesture surface. */
 .play {
   position: relative;
   height: 100%;
@@ -143,8 +172,8 @@ button.primary {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding-block: 12px;
+  gap: 8px;
+  padding-bottom: 12px;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   overflow: hidden;
@@ -153,23 +182,43 @@ button.primary {
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
+.spiral {
+  display: block;
+  flex: none;
+}
+.masthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.logo {
+  display: block;
+  max-width: 70%;
+  height: auto;
+}
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.number {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--graphite);
+  letter-spacing: 0.04em;
+}
 .bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
-.title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 18px;
-}
 .timer {
-  font-size: 26px;
+  font-size: 34px;
   font-weight: 700;
+  letter-spacing: -0.01em;
   min-width: 4ch;
-  text-align: center;
 }
 .stage {
   flex: 1;
@@ -177,7 +226,7 @@ button.primary {
   display: grid;
   place-items: center;
 }
-.fabric {
+.board {
   display: block;
   touch-action: none;
 }
@@ -185,63 +234,67 @@ button.primary {
   margin: 0;
   text-align: center;
   font-size: 14px;
+  color: var(--graphite);
   min-height: 1.35em;
 }
-footer.bar button {
+.controls .patch {
   flex: 1;
 }
 
-/* Hint cooldown: a ring of thread fills round the button over five seconds. */
-@property --fill {
-  syntax: '<angle>';
-  inherits: false;
-  initial-value: 360deg;
-}
-.hint.cooling {
-  opacity: 1;
-  border-color: transparent;
-  background:
-    linear-gradient(var(--panel), var(--panel)) padding-box,
-    conic-gradient(var(--thread) var(--fill), var(--line) 0) border-box;
-  animation: cooldown linear both;
-}
-@keyframes cooldown {
-  from {
-    --fill: 0deg;
-  }
-  to {
-    --fill: 360deg;
-  }
-}
-
-.solved {
+/* The result: a paper note taped over the page. */
+.note {
   position: absolute;
-  left: max(16px, env(safe-area-inset-left, 0px));
-  right: max(16px, env(safe-area-inset-right, 0px));
-  bottom: 12px;
-  padding: 16px 18px;
-  background: var(--panel);
-  border: 2px solid var(--text);
-  border-radius: 16px;
+  left: max(20px, env(safe-area-inset-left, 0px));
+  right: max(20px, env(safe-area-inset-right, 0px));
+  bottom: 18px;
+  padding: 22px 20px 18px;
+  background: var(--note);
+  border-radius: 3px;
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.06),
+    0 12px 28px -8px rgba(0, 0, 0, 0.3);
   text-align: center;
+  transform: rotate(-1.2deg);
 }
-.solved h2 {
+.note::before,
+.note::after {
+  content: '';
+  position: absolute;
+  top: -12px;
+  width: 78px;
+  height: 26px;
+  background: linear-gradient(170deg, rgba(255, 255, 255, 0.65), rgba(250, 248, 236, 0.45));
+  border: 1px solid rgba(120, 120, 100, 0.18);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.note::before {
+  left: 18px;
+  transform: rotate(-8deg);
+}
+.note::after {
+  right: 18px;
+  transform: rotate(7deg);
+}
+.note h2 {
   margin: 0;
-  font-size: 22px;
+  font-size: 23px;
+  text-wrap: balance;
 }
-.solved p {
-  margin: 4px 0 0;
+.note p {
+  margin: 6px 0 0;
 }
 .badge {
   font-weight: 700;
-  color: var(--badge);
+  color: var(--wool);
 }
 .fine {
   font-size: 13px;
-  opacity: 0.8;
+  color: var(--graphite);
 }
+
 @media (prefers-reduced-motion: reduce) {
-  .hint.cooling {
+  .cooldown {
     animation: none;
+    width: calc(100% - 20px);
   }
 }

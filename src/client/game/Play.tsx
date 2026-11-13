@@ -1,18 +1,20 @@
-// The play screen: timer and Reset on top, the fabric in its hoop, Undo and Hint below.
+// The play screen: logo, timer and Reset on top, the board, Undo and Hint below.
 // Nothing else is on screen while playing, and nothing scrolls.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { HINT_COOLDOWN_MS, badgeFor, badgeLabel, formatTime } from '../../shared/api.ts';
 import type { SubmitResponse, TodayResponse } from '../../shared/api.ts';
 import { compile, isComplete } from '../../shared/puzzle/pattern.ts';
-import { createUnpickCounter, cutTo, dragTo, resetThread, undoStitch } from '../../shared/puzzle/stitching.ts';
+import { createUnpickCounter, resetThread, undoStitch } from '../../shared/puzzle/stitching.ts';
 import type { Stitch } from '../../shared/puzzle/stitching.ts';
+
+const NEEDLES_FOR = { easy: 1, medium: 2, hard: 3 };
 import { askHint, startRun, submitThread } from '../api.ts';
 import { Board } from './Board.tsx';
+import { Icon, Needles, Spiral } from './Craft.tsx';
+import { Logo } from './Logo.tsx';
 
 type Result = { timeMs: number; hints: number; unpicks: number; counted: boolean; note: string };
-
-const NEEDLES = { easy: 1, medium: 2, hard: 3 };
 
 type Props = {
   today: TodayResponse;
@@ -97,8 +99,7 @@ export const Play = ({ today, skew }: Props) => {
     [board, finish, startedAt]
   );
 
-  const onDrag = useCallback((cell: number) => apply(dragTo(board, threadRef.current, cell)), [apply, board]);
-  const onCut = useCallback((cell: number) => apply(cutTo(threadRef.current, cell)), [apply]);
+  const onStitch = useCallback((stitch: Stitch) => apply(stitch), [apply]);
   const onUndo = () => apply(undoStitch(threadRef.current));
   const onReset = () => apply(resetThread(board, threadRef.current));
 
@@ -141,20 +142,24 @@ export const Play = ({ today, skew }: Props) => {
 
   return (
     <main className="play">
-      <header className="bar">
-        <div className="title">
-          <strong>DarnIt! #{today.day}</strong>
-          <span className="needles" aria-label={`${pattern.difficulty} difficulty`}>
-            {Array.from({ length: NEEDLES[pattern.difficulty] }, (_, i) => (
-              <i key={i} />
-            ))}
-          </span>
+      <Spiral />
+      <header className="masthead">
+        <Logo height={54} />
+        <div className="meta">
+          <span className="number">No. {today.day}</span>
+          <Needles count={NEEDLES_FOR[pattern.difficulty]} label={`${pattern.difficulty} pattern`} />
         </div>
-        <output className="timer">{formatTime(result ? result.timeMs : clock)}</output>
-        <button type="button" onClick={onReset} disabled={Boolean(result) || thread.length <= 1}>
+      </header>
+
+      <div className="bar">
+        <output className="timer" aria-label="Time">
+          {formatTime(result ? result.timeMs : clock)}
+        </output>
+        <button type="button" className="patch ink" onClick={onReset} disabled={Boolean(result) || thread.length <= 1}>
+          <Icon name="reset" />
           Reset
         </button>
-      </header>
+      </div>
 
       <Board
         pattern={pattern}
@@ -164,38 +169,41 @@ export const Play = ({ today, skew }: Props) => {
         hintUntil={hint.until}
         solved={Boolean(result)}
         locked={Boolean(result)}
-        onDrag={onDrag}
-        onCut={onCut}
+        onStitch={onStitch}
       />
 
       <p className="status" role="status">
         {message || `${thread.length} of ${total} stitches`}
       </p>
 
-      <footer className="bar">
-        <button type="button" onClick={onUndo} disabled={Boolean(result) || thread.length <= 1}>
+      <footer className="bar controls">
+        <button type="button" className="patch cobalt" onClick={onUndo} disabled={Boolean(result) || thread.length <= 1}>
+          <Icon name="undo" />
           Undo
         </button>
         <button
           type="button"
-          className={coolingDown ? 'hint cooling' : 'hint'}
-          style={{ animationDuration: `${HINT_COOLDOWN_MS}ms` }}
+          className={coolingDown ? 'patch magenta cooling' : 'patch magenta'}
           onClick={() => void onHint()}
           disabled={Boolean(result) || hintBusy || coolingDown}
         >
+          <Icon name="hint" />
           Hint
+          {coolingDown ? (
+            <span className="cooldown" style={{ animationDuration: `${Math.max(0, hintReadyAt - now)}ms` }} aria-hidden="true" />
+          ) : null}
         </button>
       </footer>
 
       {result ? (
-        <section className="solved" aria-live="polite">
+        <section className="note" aria-live="polite">
           <h2>
-            #{today.day} stitched in {formatTime(result.timeMs)}
+            No. {today.day} stitched in {formatTime(result.timeMs)}
           </h2>
           {badge ? <p className="badge">{badge}</p> : null}
-          <p className="fine">
-            {result.note || (result.counted ? '' : 'Practice pattern: not counted.')}
-          </p>
+          {result.note || !result.counted ? (
+            <p className="fine">{result.note || 'Practice pattern: not counted.'}</p>
+          ) : null}
         </section>
       ) : null}
     </main>

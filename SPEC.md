@@ -193,29 +193,33 @@ Build last and cut if time runs out: judges score from the demo post over one we
 
 ## Visual direction
 
-Modern embroidery: bright thread on clean fabric, sharp edges and tactile motion, a design-studio take on cross-stitch rather than a craft-fair one. Everything is drawn in code (SVG or Canvas), with no image files.
+A sketchbook page with real craft materials on it: red wool stretched across white paper and held down with clear tape, black buttons, an embroidered logo. High-definition and tactile, colourful, strong and sharp. Everything is drawn in code (SVG or Canvas), with no image files. (Direction set by David on Nov 13, replacing the hoop-and-aida look.)
 
 Materials:
 
-- **Fabric:** off-white canvas with a faint woven texture from a tiny repeating SVG pattern. Dark mode is deep indigo denim.
-- **Board:** aida cloth inside a rounded-square embroidery hoop in light wood, with a brass screw at the top. Each cell shows four tiny corner holes, like real aida.
-- **Thread:** a satin-stitch line about 55% of cell width, built from short diagonal stitches with a 1 px highlight and a soft shadow so it sits on the fabric. A small needle rides the leading end.
-- **Buttons:** white four-hole sew-through buttons with a dark number. When the thread reaches one, an X stitch sews it on in the thread colour.
-- **Seams:** bold charcoal running stitch, 4 px, clearly darker than any thread.
-- **Cross-stitch cells:** a faint printed X, like a pattern chart, that becomes a bold thread X once both passes are done.
+- **Paper:** white sketchbook paper with a fine grain, faint fibres and specks, and a spiral binding along the top. One look in every system theme: the game is always on white paper, with no dark mode.
+- **Board:** a pencil grid drawn straight onto the paper, clearly visible, with a hole pricked through the paper at every grid corner, like paper embroidery.
+- **Thread:** red wool about a third of a cell wide: round shading, twisted plies, fine fibres and loose fuzz, and a soft shadow on the paper. Its cut end at button 1 is frayed and taped down with a strip of clear tape; the last end gets taped when the pattern is solved. While dragging, the wool lifts off the page and follows the finger, with a steel needle at its end.
+- **Buttons:** glossy black buttons with bold white numbers. When the wool reaches one, a thin strand of wool rings it.
+- **Seams:** black thread in a running stitch along the cell edge, much heavier than the pencil grid.
+- **Cross-stitch cells:** a pencil X in a dashed pencil ring. After the first pass, a dashed ink ring and two ink chevrons are drawn on top of the wool, pointing along the pass still owed, so the cell never disappears under the thread. On the second pass the wool crosses over the first strand.
+- **Logo:** "DarnIt!" embroidered into the page: each letter a satin-stitch fill in its own colour (red, marigold, green, teal, cobalt, magenta, orange), with a split-stitch outline and a raised shadow. The capital I has serif bars so it never reads as a lowercase l.
+- **Controls:** embroidered patches: a solid colour with a satin texture, a dashed stitched border and a raised shadow. Undo is cobalt, Hint is magenta, Reset is black, Start stitching is wool red.
+- **Results:** a paper note taped over the page.
 
-| Role | Light mode | Dark mode |
-| --- | --- | --- |
-| Fabric | #F7F3EA | #1B1F3B |
-| Text | #1F1B24 | #F4EFE6 |
-| Default thread | Coral #FF5A4E | Coral #FF6F61 |
-| Unlockable threads | Marigold #FFB320, teal #12A39A, cobalt #2F5BEA, magenta #E0338C, leaf #4CB944 | Same |
-| Seams | #2B2730 | #E9E2D6 |
-| Hoop wood | #D9B48A | #B98A5E |
+| Role | Colour |
+| --- | --- |
+| Paper | #FCFBF8 with grain |
+| Text and ink | #16151A |
+| Pencil | #5B6070 |
+| Wool | #CC1A2E, shading from #A3101F to #F25A66 |
+| Patches | Cobalt #2F5BEA, magenta #C0247A, black #1C1B20, wool red #CC1A2E |
+| Logo | #E11D48, #F59E0B, #16A34A, #0891B2, #2F5BEA, #C026D3, #EA580C |
+| Unlockable wool colours | Marigold, teal, cobalt, magenta, leaf |
 
 All text meets 4.5:1 contrast, and button numbers stay at least 16 px on an 8×8 board on a 360 px-wide phone.
 
-Type: one sharp geometric sans for everything (for example Space Grotesk or Manrope) with tabular numbers, bundled with the app rather than loaded from Google. Only the logo uses a stitched outline.
+Type: Space Grotesk for everything, with tabular numbers, bundled with the app rather than loaded from Google.
 
 Motion:
 

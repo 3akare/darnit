@@ -75,6 +75,15 @@ image for an account with no custom avatar.
 | Cross-stitch placement: interior only, never on a button | Also kept apart from each other (not touching, even diagonally), and placed so the two checkerboard colours balance; otherwise no thread can exist | Add both to the cross-stitch constraints |
 | Difficulty score calibrated against David's times | Score is computed, but its weights are a first guess and no pattern is rejected on it yet | Unchanged. Calibration still needs David's 20 boards per tier |
 
+### From David's play test on the test page (Nov 13)
+
+| SPEC.md said | What happened | Change |
+| --- | --- | --- |
+| Cross-stitch cell: a faint printed X | After the first pass the wool covered it and David could not tell where it was | Ink ring and chevrons drawn on top of the wool after the first pass (SPEC.md updated). David is "not a fan" of the mechanic overall: whether to keep it is open |
+| Board: aida cloth in a hoop | The grid was not obvious | Pencil grid with pricked holes on white paper (SPEC.md updated) |
+| Drag | "Not so bad, but not the best" | The board now applies steps itself and redraws in the same frame, the wool follows the finger, cells change only once the finger is a fifth of a cell past the edge, and phones that allow it give a short vibration per stitch |
+| Dark mode is indigo denim | David wants a white background | The game is always white paper (SPEC.md updated) |
+
 ### From the account suspension
 
 | SPEC.md says | What happened | Change to SPEC.md |

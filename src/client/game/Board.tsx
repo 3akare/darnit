@@ -1,12 +1,17 @@
-// The fabric: a canvas that draws the pattern and turns finger movement into stitches.
-// Pointer events with touch-action: none, so the page never scrolls while drawing. This
-// component is only mounted in expanded mode, where capturing gestures is allowed.
+// The board: a canvas that draws the pattern and turns finger movement into stitches.
+//
+// The board applies drag steps itself and redraws in the same frame, then tells the play
+// screen, so drawing never waits on a React render. Pointer events with touch-action: none
+// keep the page still while drawing; this component is only mounted in expanded mode,
+// where capturing gestures is allowed.
 
 import { useEffect, useRef } from 'react';
 import { directionBetween } from '../../shared/puzzle/pattern.ts';
 import type { Board as CompiledBoard, Pattern } from '../../shared/puzzle/pattern.ts';
-import { cellAt, drawBackdrop, drawScene, layout, readTheme } from './draw.ts';
-import type { Geometry, Scene, Theme } from './draw.ts';
+import { cutTo, dragTo } from '../../shared/puzzle/stitching.ts';
+import type { Stitch } from '../../shared/puzzle/stitching.ts';
+import { cellAt, centre, drawBackdrop, drawFrame, drawThreadLayer, layout } from './draw.ts';
+import type { Geometry, Live } from './draw.ts';
 
 type Props = {
   pattern: Pattern;
@@ -16,27 +21,46 @@ type Props = {
   hintUntil: number;
   solved: boolean;
   locked: boolean;
-  /** The finger moved onto this cell while drawing. */
-  onDrag: (cell: number) => void;
-  /** A clean tap on an earlier cell of the thread. */
-  onCut: (cell: number) => void;
+  /** Every change the finger makes: drag steps and taps that cut the thread back. */
+  onStitch: (stitch: Stitch) => void;
 };
 
-export const Board = ({ pattern, board, thread, hintCell, hintUntil, solved, locked, onDrag, onCut }: Props) => {
+const buzz = (ms: number): void => {
+  try {
+    navigator.vibrate?.(ms);
+  } catch {
+    // Not every webview allows vibration. It is only a nicety.
+  }
+};
+
+export const Board = ({ pattern, board, thread, hintCell, hintUntil, solved, locked, onStitch }: Props) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const live = useRef({ thread, hintCell, hintUntil, solved, locked, onDrag, onCut });
-  const stitchedAt = useRef<number[]>([]);
-  const invalidate = useRef<() => void>(() => {});
+  const threadRef = useRef<readonly number[]>(thread);
+  const props = useRef({ solved, locked, onStitch });
+  const live = useRef<Live>({
+    dragging: false,
+    fx: 0,
+    fy: 0,
+    hintCell,
+    hintUntil,
+    popCell: -1,
+    popAt: 0,
+    solved,
+    reducedMotion: false,
+  });
+  const refresh = useRef<(layerChanged: boolean) => void>(() => {});
 
   useEffect(() => {
-    // Stamp newly stitched positions so they can pop, and forget unpicked ones.
-    const times = stitchedAt.current;
-    const now = performance.now();
-    times.length = Math.min(times.length, thread.length);
-    while (times.length < thread.length) times.push(times.length === 0 ? 0 : now);
-    live.current = { thread, hintCell, hintUntil, solved, locked, onDrag, onCut };
-    invalidate.current();
-  }, [thread, hintCell, hintUntil, solved, locked, onDrag, onCut]);
+    props.current = { solved, locked, onStitch };
+    live.current.hintCell = hintCell;
+    live.current.hintUntil = hintUntil;
+    const solvedChanged = live.current.solved !== solved;
+    live.current.solved = solved;
+    // Undo, Reset and hints change the thread from outside the board.
+    const threadChanged = threadRef.current !== thread;
+    threadRef.current = thread;
+    refresh.current(threadChanged || solvedChanged);
+  }, [thread, hintCell, hintUntil, solved, locked, onStitch]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -45,127 +69,163 @@ export const Board = ({ pattern, board, thread, hintCell, hintUntil, solved, loc
     if (!canvas || !ctx || !box) return;
 
     let geo: Geometry = layout(100, pattern.size);
-    let theme: Theme = readTheme(canvas);
     let backdrop = document.createElement('canvas');
+    let layer = document.createElement('canvas');
+    let layerStale = true;
     let raf = 0;
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    live.current.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const frame = (now: number) => {
       raf = 0;
-      const state = live.current;
-      const scene: Scene = {
-        thread: state.thread,
-        stitchedAt: stitchedAt.current,
-        hintCell: state.hintCell,
-        hintUntil: state.hintUntil,
-        solved: state.solved,
-        reducedMotion,
-      };
-      if (drawScene(ctx, geo, board, backdrop, theme, scene, now)) schedule();
+      if (layerStale) {
+        layer = drawThreadLayer(geo, board, threadRef.current, live.current.solved);
+        layerStale = false;
+      }
+      if (drawFrame(ctx, geo, threadRef.current, backdrop, layer, live.current, now)) schedule();
     };
     const schedule = () => {
       if (!raf) raf = requestAnimationFrame(frame);
     };
-    invalidate.current = schedule;
+    refresh.current = (layerChanged: boolean) => {
+      if (layerChanged) layerStale = true;
+      schedule();
+    };
 
     const resize = () => {
       const rect = box.getBoundingClientRect();
       const edge = Math.floor(Math.min(rect.width, rect.height));
       if (edge <= 0) return;
       geo = layout(edge, pattern.size);
-      theme = readTheme(canvas);
       canvas.style.width = `${edge}px`;
       canvas.style.height = `${edge}px`;
       canvas.width = Math.round(edge * geo.dpr);
       canvas.height = Math.round(edge * geo.dpr);
-      backdrop = drawBackdrop(geo, pattern, theme);
+      backdrop = drawBackdrop(geo, pattern);
+      layerStale = true;
       schedule();
     };
 
     // --- finger handling
-    let armed = false; // true once this gesture is attached to the head of the thread
+    let armed = false; // this gesture is attached to the head of the thread
     let lastCell = -1;
     let tapCell = -1; // an earlier thread cell pressed and not yet moved off
 
-    const cellOf = (e: PointerEvent): number => {
+    const point = (e: PointerEvent): [number, number] => {
       const rect = canvas.getBoundingClientRect();
-      return cellAt(geo, e.clientX - rect.left, e.clientY - rect.top);
+      return [e.clientX - rect.left, e.clientY - rect.top];
     };
-    const headOf = (): number => live.current.thread[live.current.thread.length - 1] ?? -1;
-    const nextToHead = (cell: number): boolean => directionBetween(board, headOf(), cell) >= 0;
+    const head = (): number => threadRef.current[threadRef.current.length - 1] ?? -1;
 
-    const visit = (cell: number) => {
+    const commit = (stitch: Stitch) => {
+      if (stitch.added === 0 && stitch.removed === 0) return;
+      const before = threadRef.current;
+      threadRef.current = stitch.thread;
+      if (stitch.added > 0) {
+        const newest = stitch.thread[stitch.thread.length - 1] ?? -1;
+        live.current.popCell = newest;
+        live.current.popAt = performance.now();
+        buzz((board.buttonIndex[newest] ?? -1) >= 0 ? 14 : 4);
+      } else if (before.length > stitch.thread.length) {
+        live.current.popCell = -1;
+      }
+      layerStale = true;
+      schedule();
+      props.current.onStitch(stitch);
+    };
+
+    const visit = (x: number, y: number) => {
+      const cell = cellAt(geo, x, y, lastCell);
       if (cell < 0) return;
       if (cell !== tapCell) tapCell = -1;
       if (!armed) {
-        if (cell === headOf()) armed = true;
-        else if (nextToHead(cell) && !live.current.thread.includes(cell)) armed = true;
-        else return;
+        const h = head();
+        const [hx, hy] = centre(geo, h);
+        const nearHead = Math.hypot(x - hx, y - hy) < geo.cell * 0.75;
+        const freeNeighbour = directionBetween(board, h, cell) >= 0 && !threadRef.current.includes(cell);
+        if (!nearHead && !freeNeighbour) return;
+        armed = true;
+        live.current.dragging = true;
       }
       if (cell === lastCell) return;
       lastCell = cell;
-      if (cell !== headOf()) live.current.onDrag(cell);
+      if (cell !== head()) commit(dragTo(board, threadRef.current, cell));
     };
 
     const onDown = (e: PointerEvent) => {
-      if (live.current.locked) return;
+      if (props.current.locked) return;
       e.preventDefault();
       canvas.setPointerCapture(e.pointerId);
       armed = false;
       lastCell = -1;
       tapCell = -1;
-      const cell = cellOf(e);
-      if (cell < 0) return;
-      const t = live.current.thread;
-      if (cell !== headOf() && t.includes(cell)) {
-        // Pressing an earlier part of the thread never changes it on its own.
+      const [x, y] = point(e);
+      live.current.fx = x;
+      live.current.fy = y;
+      const cell = cellAt(geo, x, y);
+      const t = threadRef.current;
+      if (cell >= 0 && cell !== head() && t.includes(cell)) {
+        // Pressing an earlier part of the thread never changes it on its own; a clean tap cuts.
         tapCell = cell;
+        lastCell = cell;
         return;
       }
-      visit(cell);
+      visit(x, y);
+      schedule();
     };
+
     const onMove = (e: PointerEvent) => {
-      if (live.current.locked || e.buttons === 0) return;
+      if (props.current.locked || e.buttons === 0) return;
       const batch = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
-      if (batch.length > 1) for (const each of batch) visit(cellOf(each));
-      else visit(cellOf(e));
+      for (const each of batch.length > 1 ? batch : [e]) {
+        const [x, y] = point(each);
+        visit(x, y);
+      }
+      const [x, y] = point(e);
+      live.current.fx = x;
+      live.current.fy = y;
+      if (armed) schedule();
+    };
+
+    const release = () => {
+      armed = false;
+      tapCell = -1;
+      live.current.dragging = false;
+      schedule();
     };
     const onUp = (e: PointerEvent) => {
-      if (!live.current.locked && tapCell >= 0 && cellOf(e) === tapCell) live.current.onCut(tapCell);
-      armed = false;
-      tapCell = -1;
-    };
-    const onCancel = () => {
-      armed = false;
-      tapCell = -1;
+      if (!props.current.locked && tapCell >= 0) {
+        const [x, y] = point(e);
+        if (cellAt(geo, x, y) === tapCell) commit(cutTo(threadRef.current, tapCell));
+      }
+      release();
     };
 
     const observer = new ResizeObserver(resize);
     observer.observe(box);
-    const scheme = window.matchMedia('(prefers-color-scheme: dark)');
-    scheme.addEventListener('change', resize);
-    void document.fonts.ready.then(schedule);
+    void document.fonts.ready.then(() => {
+      layerStale = true;
+      schedule();
+    });
     canvas.addEventListener('pointerdown', onDown);
     canvas.addEventListener('pointermove', onMove);
     canvas.addEventListener('pointerup', onUp);
-    canvas.addEventListener('pointercancel', onCancel);
+    canvas.addEventListener('pointercancel', release);
     resize();
 
     return () => {
       if (raf) cancelAnimationFrame(raf);
       observer.disconnect();
-      scheme.removeEventListener('change', resize);
       canvas.removeEventListener('pointerdown', onDown);
       canvas.removeEventListener('pointermove', onMove);
       canvas.removeEventListener('pointerup', onUp);
-      canvas.removeEventListener('pointercancel', onCancel);
-      invalidate.current = () => {};
+      canvas.removeEventListener('pointercancel', release);
+      refresh.current = () => {};
     };
   }, [pattern, board]);
 
   return (
     <div className="stage">
-      <canvas ref={canvasRef} className="fabric" aria-label="Pattern fabric" />
+      <canvas ref={canvasRef} className="board" aria-label="Pattern board" />
     </div>
   );
 };

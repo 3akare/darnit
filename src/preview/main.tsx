@@ -10,6 +10,7 @@ import './preview.css';
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Game } from '../client/game/Game.tsx';
+import { applyPaper } from '../client/paper.ts';
 import type { Difficulty } from '../shared/puzzle/pattern.ts';
 import { ensureDay, nextPattern } from './backend.ts';
 
@@ -38,6 +39,7 @@ const Preview = () => {
   );
 };
 
+applyPaper();
 const root = document.getElementById('root');
 if (root) {
   createRoot(root).render(

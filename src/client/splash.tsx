@@ -11,33 +11,36 @@ import { createRoot } from 'react-dom/client';
 import type { TodayResponse } from '../shared/api.ts';
 import { formatTime } from '../shared/api.ts';
 import { fetchToday } from './api.ts';
+import { Needles } from './game/Craft.tsx';
+import { Logo } from './game/Logo.tsx';
+import { applyPaper } from './paper.ts';
 
-const NEEDLES = { easy: 1, medium: 2, hard: 3 };
+const NEEDLES_FOR = { easy: 1, medium: 2, hard: 3 };
 
 const Splash = () => {
   const [today, setToday] = useState<TodayResponse | null>(null);
   useEffect(() => {
     fetchToday().then(setToday, () => undefined);
   }, []);
-  const solved = today?.run?.finished && today.run.timeMs !== null;
+  const time = today?.run?.finished ? today.run.timeMs : null;
   return (
     <main className="card">
-      <h1>DarnIt!{today ? ` #${today.day}` : ''}</h1>
+      <Logo height={56} />
       {today ? (
-        <span className="needles" aria-label={`${today.pattern.difficulty} difficulty`}>
-          {Array.from({ length: NEEDLES[today.pattern.difficulty] }, (_, i) => (
-            <i key={i} />
-          ))}
-        </span>
+        <div className="meta">
+          <span className="number">No. {today.day}</span>
+          <Needles count={NEEDLES_FOR[today.pattern.difficulty]} label={`${today.pattern.difficulty} pattern`} />
+        </div>
       ) : null}
-      {solved && today?.run?.timeMs != null ? <p>Stitched in {formatTime(today.run.timeMs)}</p> : null}
-      <button type="button" className="primary" onClick={(e) => requestExpandedMode(e.nativeEvent, 'game')}>
-        {solved ? 'See your result' : 'Start stitching'}
+      {time !== null ? <p>Stitched in {formatTime(time)}</p> : null}
+      <button type="button" className="patch wool" onClick={(e) => requestExpandedMode(e.nativeEvent, 'game')}>
+        {time !== null ? 'See your result' : 'Start stitching'}
       </button>
     </main>
   );
 };
 
+applyPaper();
 const root = document.getElementById('root');
 if (root) {
   createRoot(root).render(
