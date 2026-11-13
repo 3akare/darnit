@@ -42,6 +42,9 @@
       }
     }
   },
+  "dev": {
+    "subreddit": "DarnItGame"
+  },
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build"

@@ -5,7 +5,7 @@
 // keep the page still while drawing; this component is only mounted in expanded mode,
 // where capturing gestures is allowed.
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { directionBetween } from '../../shared/puzzle/pattern.ts';
 import type { Board as CompiledBoard, Pattern } from '../../shared/puzzle/pattern.ts';
 import { cutTo, dragTo } from '../../shared/puzzle/stitching.ts';
@@ -67,6 +67,8 @@ export const Board = ({
   onStitch,
 }: Props) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // Reopening a solved day shows the finished board still; only a solve on screen animates.
+  const [solvedOnArrival] = useState(solved);
   const threadRef = useRef<readonly number[]>(thread);
   const props = useRef({ solved, locked, onStitch });
   const live = useRef<Live>({
@@ -82,6 +84,8 @@ export const Board = ({
     empty,
     guide,
     guideBack,
+    solvedAt: 0,
+    buttons: pattern.buttons,
   });
   const refresh = useRef<(layerChanged: boolean) => void>(() => {});
 
@@ -93,6 +97,8 @@ export const Board = ({
     live.current.guide = guide;
     live.current.guideBack = guideBack;
     const solvedChanged = live.current.solved !== solved;
+    // Only a solve that happens on screen gets the solve moment, not reopening a solved day.
+    if (solvedChanged && solved && threadRef.current.length > 1) live.current.solvedAt = performance.now();
     live.current.solved = solved;
     // Undo, Reset and hints change the thread from outside the board.
     const threadChanged = threadRef.current !== thread;
@@ -314,7 +320,7 @@ export const Board = ({
   }, [pattern, board]);
 
   return (
-    <div className="stage">
+    <div className={solved && !solvedOnArrival ? 'stage solving' : 'stage'}>
       <canvas ref={canvasRef} className="board" aria-label="Pattern board" />
     </div>
   );

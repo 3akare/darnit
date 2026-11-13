@@ -300,7 +300,7 @@ P0, must ship:
 
 - [x] Generator, solver and a 60-day pattern bank
 - [ ] Daily scheduled post at 01:00 UTC
-- [ ] Lag-free drawing, Undo, Reset, Hint with cooldown
+- [ ] Lag-free drawing, Undo, Reset, Hint with cooldown (built; awaiting a Reddit playtest on a real phone)
 - [x] Server timing and path validation
 - [ ] Results card with badges and copyable share text
 - [ ] Today leaderboard with the percentile line

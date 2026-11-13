@@ -627,6 +627,88 @@ export type Live = {
   /** Practice board only: the next squares to take, in order, or the one square to unpick back to. */
   guide: readonly number[];
   guideBack: boolean;
+  /** When the pattern was solved in this session, for the solve moment. 0 if not. */
+  solvedAt: number;
+  buttons: readonly number[];
+};
+
+/** Length of the solve moment drawn on the canvas, in ms. The board's shrink is CSS. */
+export const SOLVE_GLOW_MS = 1000;
+
+/** The part of a polyline between distances a and b along it. */
+const slice = (pts: readonly Pt[], a: number, b: number): Pt[] => {
+  const out: Pt[] = [];
+  let walked = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const p = pts[i - 1] ?? [0, 0];
+    const q = pts[i] ?? [0, 0];
+    const len = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    const s0 = Math.max(a, walked);
+    const s1 = Math.min(b, walked + len);
+    if (s1 > s0 && len > 0) {
+      const at = (s: number): Pt => [p[0] + ((q[0] - p[0]) * (s - walked)) / len, p[1] + ((q[1] - p[1]) * (s - walked)) / len];
+      if (out.length === 0) out.push(at(s0));
+      out.push(at(s1));
+    }
+    walked += len;
+  }
+  return out;
+};
+
+/** A four-point glint, like light catching a button. */
+const glint = (ctx: Ctx, x: number, y: number, r: number, alpha: number): void => {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+  ctx.shadowBlur = r * 0.6;
+  ctx.beginPath();
+  ctx.moveTo(x, y - r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.quadraticCurveTo(x, y, x, y + r);
+  ctx.quadraticCurveTo(x, y, x - r, y);
+  ctx.quadraticCurveTo(x, y, x, y - r);
+  ctx.fill();
+  ctx.restore();
+};
+
+/**
+ * The solve moment on the canvas: a band of light runs along the thread as it tightens,
+ * then each button glints in turn.
+ */
+const drawSolveGlow = (ctx: Ctx, geo: Geometry, thread: readonly number[], live: Live, now: number): boolean => {
+  const t = now - live.solvedAt;
+  if (live.solvedAt <= 0 || t > SOLVE_GLOW_MS || live.reducedMotion) return false;
+  const pts = thread.map((c) => centre(geo, c));
+  let total = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const p = pts[i - 1] ?? [0, 0];
+    const q = pts[i] ?? [0, 0];
+    total += Math.hypot(q[0] - p[0], q[1] - p[1]);
+  }
+  const w = woolWidth(geo);
+  const run = Math.min(1, t / 600);
+  const head = run * (total + w * 6);
+  const band = slice(pts, head - w * 6, head);
+  if (band.length > 1) {
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+    ctx.lineWidth = w * 0.45;
+    tracePts(ctx, band);
+    ctx.stroke();
+    ctx.restore();
+  }
+  live.buttons.forEach((c, i) => {
+    const start = 300 + i * 45;
+    const local = (t - start) / 320;
+    if (local <= 0 || local >= 1) return;
+    const [x, y] = centre(geo, c);
+    const r = geo.cell * 0.34;
+    glint(ctx, x - r * 0.45, y - r * 0.45, r * 0.7 * Math.sin(local * Math.PI), Math.sin(local * Math.PI));
+  });
+  return true;
 };
 
 /** Inside a square: a soft wash and an arrow pointing the way the thread goes. */
@@ -758,6 +840,8 @@ export const drawFrame = (
     }
     ctx.restore();
   }
+
+  if (drawSolveGlow(ctx, geo, thread, live, now)) animating = true;
 
   if (live.hintCell >= 0 && now < live.hintUntil) {
     animating = true;

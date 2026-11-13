@@ -563,3 +563,21 @@ body {
 .intro-card p {
   margin: 6px 0 0;
 }
+
+/* Solve moment: after the thread tightens and the buttons glint, the board shrinks into a
+   quilt square and drops toward the quilt. 1.5 s in all, no confetti. */
+.stage.solving .board {
+  animation: into-quilt 520ms cubic-bezier(0.55, 0, 0.75, 0.2) 950ms forwards;
+}
+@keyframes into-quilt {
+  to {
+    transform: translateY(35%) scale(0.18);
+    opacity: 0.4;
+    border-radius: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage.solving .board {
+    animation: none;
+  }
+}

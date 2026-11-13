@@ -13,7 +13,6 @@ import { CrossIntro } from './CrossIntro.tsx';
 import { Board } from './Board.tsx';
 import { Icon, Level } from './Craft.tsx';
 import { Logo } from './Logo.tsx';
-import { ResultCard } from './ResultCard.tsx';
 import type { Result } from './ResultCard.tsx';
 import { Results } from '../results/Results.tsx';
 
@@ -187,7 +186,7 @@ export const Play = ({ today, skew }: Props) => {
   const [showResults, setShowResults] = useState(Boolean(result));
   useEffect(() => {
     if (!result || showResults) return;
-    const id = window.setTimeout(() => setShowResults(true), 1600);
+    const id = window.setTimeout(() => setShowResults(true), 1500);
     return () => window.clearTimeout(id);
   }, [result, showResults]);
 
@@ -272,7 +271,6 @@ export const Play = ({ today, skew }: Props) => {
       </footer>
 
       {crossIntro ? <CrossIntro onClose={closeCrossIntro} /> : null}
-      {result ? <ResultCard day={today.day} subredditName={today.subredditName} result={result} /> : null}
     </main>
   );
 };

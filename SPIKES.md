@@ -79,7 +79,7 @@ image for an account with no custom avatar.
 
 | SPEC.md said | What happened | Change |
 | --- | --- | --- |
-| Cross-stitch cell: a faint printed X | After the first pass the wool covered it and David could not tell where it was | Ink ring and chevrons drawn on top of the wool after the first pass (SPEC.md updated). David is "not a fan" of the mechanic overall: whether to keep it is open |
+| Cross-stitch cell: a faint printed X | After the first pass the wool covered it and David could not tell where it was | Ink ring and chevrons drawn on top of the wool after the first pass (SPEC.md updated). David later decided to keep cross-stitch (Nov 13) |
 | Board: aida cloth in a hoop | The grid was not obvious | Pencil grid with pricked holes on white paper (SPEC.md updated) |
 | Drag | "Not so bad, but not the best" | The board now applies steps itself and redraws in the same frame, the wool follows the finger, cells change only once the finger is a fifth of a cell past the edge, and phones that allow it give a short vibration per stitch |
 | Dark mode is indigo denim | David wants a white background | The game is always white paper (SPEC.md updated) |
@@ -103,7 +103,7 @@ image for an account with no custom avatar.
 | Remove the needle | Removed, at rest and while dragging (SPEC.md updated) |
 | No pointing hand in the practice board; let the grid show the way | The next three squares light up orange with arrows; a wrong turn outlines the square to unpick back to (SPEC.md updated) |
 | Landing on the practice board and the Results page cold made little sense | The practice board opens with one line on the goal. Every Results section has a one-line explanation, and the heatmap is now "Today's trickiest spot", drawn over the day's solution so the orange squares read as places on the route |
-| The heatmap feels useless | Reworked as above. Whether to keep it is David's call; SPEC.md makes it the main Reddit-y feature |
+| The heatmap feels useless | Reworked as above. After seeing the rework, David decided to keep it (Nov 13) |
 
 ### From the account suspension
 
