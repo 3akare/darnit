@@ -14,6 +14,7 @@ import { Icon, Level } from './Craft.tsx';
 import { Logo } from './Logo.tsx';
 import { ResultCard } from './ResultCard.tsx';
 import type { Result } from './ResultCard.tsx';
+import { Results } from '../results/Results.tsx';
 
 
 type Props = {
@@ -30,6 +31,9 @@ export const Play = ({ today, skew }: Props) => {
   const [thread, setThread] = useState<number[]>([firstCell]);
   const threadRef = useRef(thread);
   const counter = useRef(createUnpickCounter());
+  // Squares the player unpicked back to, for the day's wrong-turn heatmap.
+  const unpickCells = useRef(new Set<number>());
+  const retreatEnd = useRef(-1);
   const hints = useRef(today.run?.hints ?? 0);
 
   // The on-screen clock is display only. The server stamps the real start and finish.
@@ -70,7 +74,10 @@ export const Play = ({ today, skew }: Props) => {
       submitting.current = true;
       const localMs = startedAt === null ? 0 : Date.now() - startedAt;
       const unpicks = counter.current.count;
-      const response: SubmitResponse | null = await submitThread(finalThread, unpicks).catch(() => null);
+      if (retreatEnd.current >= 0) unpickCells.current.add(retreatEnd.current);
+      const response: SubmitResponse | null = await submitThread(finalThread, unpicks, [...unpickCells.current]).catch(
+        () => null
+      );
       if (response?.ok) {
         setResult({
           timeMs: response.timeMs,
@@ -103,6 +110,11 @@ export const Play = ({ today, skew }: Props) => {
     (stitch: Stitch, countsAsUnpick = true) => {
       if (stitch.added === 0 && stitch.removed === 0) return;
       if (countsAsUnpick || stitch.added > 0) counter.current.note(stitch);
+      if (countsAsUnpick && stitch.removed > 0) retreatEnd.current = stitch.thread[stitch.thread.length - 1] ?? -1;
+      if (stitch.added > 0 && retreatEnd.current >= 0) {
+        unpickCells.current.add(retreatEnd.current);
+        retreatEnd.current = -1;
+      }
       threadRef.current = stitch.thread;
       setThread(stitch.thread);
       setMessage('');
@@ -155,6 +167,14 @@ export const Play = ({ today, skew }: Props) => {
     }
   };
 
+  // The solve moment: the finished thread stays on screen briefly, then the Results page.
+  const [showResults, setShowResults] = useState(Boolean(result));
+  useEffect(() => {
+    if (!result || showResults) return;
+    const id = window.setTimeout(() => setShowResults(true), 1600);
+    return () => window.clearTimeout(id);
+  }, [result, showResults]);
+
   const total = board.total;
   const lastButton = pattern.buttons[pattern.buttons.length - 1] ?? -1;
   // Every button joined but squares left over: say so plainly and show which squares.
@@ -177,6 +197,8 @@ export const Play = ({ today, skew }: Props) => {
       : thread.length <= 1 && !result
         ? `Join 1 to ${pattern.buttons.length} in order and fill every square.`
         : `${thread.length} of ${total} stitches`;
+
+  if (result && showResults) return <Results today={today} result={result} />;
 
   return (
     <main className="play">

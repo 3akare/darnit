@@ -27,10 +27,12 @@ export const context: {
   postId: string | undefined;
   userId: string | undefined;
   username: string | undefined;
+  snoovatar: string | undefined;
   subredditName: string;
 } = {
   postId: undefined,
   userId: 't2_preview',
   username: 'preview-player',
+  snoovatar: undefined,
   subredditName: 'DarnItGame',
 };

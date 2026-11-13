@@ -2,4 +2,8 @@
 
 export const context = { username: 'preview-player', postId: 't3_preview', client: undefined };
 
-export const requestExpandedMode = (): void => {};
+export const requestExpandedMode = (_event?: unknown, _entry?: string): void => {};
+
+export const navigateTo = (url: string): void => {
+  console.log('navigateTo', url);
+};

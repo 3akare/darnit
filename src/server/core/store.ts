@@ -10,6 +10,10 @@ export type Store = {
   /** 0-based position by ascending score, or undefined if absent. */
   zRank(key: string, member: string): Promise<number | undefined>;
   zCard(key: string): Promise<number>;
+  /** Members by ascending score, positions start to stop inclusive (-1 is the last). */
+  zRange(key: string, start: number, stop: number): Promise<{ member: string; score: number }[]>;
+  hIncrBy(key: string, field: string, value: number): Promise<number>;
+  hGetAll(key: string): Promise<Record<string, string>>;
 };
 
 export const createMemoryStore = (
@@ -46,5 +50,21 @@ export const createMemoryStore = (
       return order.findIndex(([m]) => m === member);
     },
     zCard: async (key) => Object.keys(readSet(key)).length,
+    zRange: async (key, start, stop) => {
+      const order = Object.entries(readSet(key))
+        .sort(([ma, a], [mb, b]) => a - b || (ma < mb ? -1 : ma > mb ? 1 : 0))
+        .map(([member, score]) => ({ member, score }));
+      const end = stop < 0 ? order.length + stop : stop;
+      return order.slice(start, end + 1);
+    },
+    hIncrBy: async (key, field, value) => {
+      const hash: Record<string, string> = JSON.parse(strings.get(key) ?? '{}');
+      const next = Number(hash[field] ?? 0) + value;
+      hash[field] = String(next);
+      strings.set(key, JSON.stringify(hash));
+      dump();
+      return next;
+    },
+    hGetAll: async (key) => JSON.parse(strings.get(key) ?? '{}'),
   };
 };

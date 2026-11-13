@@ -1,6 +1,6 @@
 // Request and response shapes shared by the client and the server.
 
-import type { Pattern } from './puzzle/pattern.ts';
+import type { Difficulty, Pattern } from './puzzle/pattern.ts';
 
 export type Badge = 'flawless' | 'no-hints-counted' | 'no-hints' | 'none';
 
@@ -29,6 +29,9 @@ export type TodayResponse = {
   run: RunView | null;
   /** Set once the player has a counted finish today. */
   standing: Standing | null;
+  /** How many have solved this day's pattern. */
+  solvers: number;
+  postId: string;
   serverNow: number;
   nextResetAt: number;
 };
@@ -47,7 +50,12 @@ export type HintResponse =
     }
   | { ok: false; reason: 'cooldown' | 'not-started' | 'finished' | 'logged-out' | 'no-pattern'; hintReadyAt?: number };
 
-export type SubmitRequest = { thread: number[]; unpicks: number };
+export type SubmitRequest = {
+  thread: number[];
+  unpicks: number;
+  /** Squares the player unpicked back to, for the wrong-turn heatmap. */
+  unpickCells: number[];
+};
 export type SubmitResponse =
   | { ok: true; timeMs: number; hints: number; unpicks: number; badge: Badge; counted: boolean; standing: Standing | null }
   | { ok: false; reason: string };
@@ -116,3 +124,52 @@ export const shareText = (input: {
   if (last) lines.push(last);
   return lines.join('\n');
 };
+
+export type LeaderRow = {
+  rank: number;
+  username: string;
+  snoovatar: string | null;
+  timeMs: number;
+  badge: Badge;
+  unpicks: number;
+  me: boolean;
+};
+
+export type Stats = {
+  plays: number;
+  solves: number;
+  bestMs: number | null;
+  currentStreak: number;
+  maxStreak: number;
+  nextMilestone: { days: number; reward: string; toGo: number } | null;
+};
+
+/** One quilt square: a day's pattern, sewn if solved (personal) or always (community). */
+export type QuiltSquare = {
+  day: number;
+  size: number;
+  difficulty: Difficulty;
+  /** The thread to sew on the square, or null for plain fabric. */
+  thread: number[] | null;
+  timeMs: number | null;
+  badge: Badge | null;
+  unpicks: number;
+  solvers: number;
+};
+
+export type ResultsResponse =
+  | {
+      ok: true;
+      day: number;
+      subredditName: string;
+      pattern: Pattern;
+      leaderboard: { top: LeaderRow[]; me: LeaderRow | null; solvers: number };
+      stats: Stats;
+      quilt: QuiltSquare[];
+      community: QuiltSquare[];
+      /** Players who unpicked back to each square today, and how many solved. */
+      heatmap: { counts: number[]; players: number };
+      serverNow: number;
+      nextResetAt: number;
+    }
+  | { ok: false; reason: 'not-finished' | 'logged-out' | 'no-pattern' };

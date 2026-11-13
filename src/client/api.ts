@@ -1,4 +1,4 @@
-import type { HintResponse, StartResponse, SubmitResponse, TodayResponse } from '../shared/api.ts';
+import type { HintResponse, ResultsResponse, StartResponse, SubmitResponse, TodayResponse } from '../shared/api.ts';
 
 const post = async <T>(path: string, body: unknown): Promise<T> => {
   const res = await fetch(path, {
@@ -20,5 +20,15 @@ export const fetchToday = async (): Promise<TodayResponse> => {
 
 export const startRun = (): Promise<StartResponse> => post('/api/start', {});
 export const askHint = (thread: readonly number[]): Promise<HintResponse> => post('/api/hint', { thread });
-export const submitThread = (thread: readonly number[], unpicks: number): Promise<SubmitResponse> =>
-  post('/api/submit', { thread, unpicks });
+export const submitThread = (
+  thread: readonly number[],
+  unpicks: number,
+  unpickCells: readonly number[]
+): Promise<SubmitResponse> => post('/api/submit', { thread, unpicks, unpickCells });
+
+export const fetchResults = async (): Promise<ResultsResponse> => {
+  const res = await fetch('/api/results');
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data: ResultsResponse = await res.json();
+  return data;
+};

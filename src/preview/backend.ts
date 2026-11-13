@@ -5,6 +5,7 @@ import { Hono } from 'hono';
 import { BANK } from '../server/bank/bank.ts';
 import { currentDay, listDays, recordDay } from '../server/core/days.ts';
 import type { Day } from '../server/core/days.ts';
+import { addHeat, saveProfile } from '../server/core/players.ts';
 import { leaderboardKey } from '../server/core/runs.ts';
 import { api } from '../server/routes/api.ts';
 import type { Difficulty, StoredPattern } from '../shared/puzzle/pattern.ts';
@@ -20,14 +21,34 @@ window.fetch = (input, init) => {
   return realFetch(input, init);
 };
 
+/**
+ * Test page only: six sample players with times, badges and wrong turns, so every part of
+ * the Results page has something to show. The real game never invents players.
+ */
+const seedSamples = async (day: number, pattern: StoredPattern): Promise<void> => {
+  const times = [41, 58, 73, 96, 132, 214];
+  for (let i = 0; i < times.length; i++) {
+    const userId = `t2_sample${i}`;
+    const ms = (times[i] ?? 60) * 1000;
+    await redis.zAdd(leaderboardKey(day), { member: userId, score: ms });
+    await saveProfile(redis, userId, { username: `sample-stitcher-${i + 1}`, snoovatar: null });
+    const unpicks = i % 3;
+    await redis.set(
+      `run:${day}:${userId}`,
+      JSON.stringify({ startedAt: 0, finishedAt: ms, timeMs: ms, hints: i === 5 ? 1 : 0, unpicks, lastHintAt: 0 })
+    );
+    // Wrong turns cluster round the middle of the thread, like real ones would.
+    const mid = pattern.solution[Math.floor(pattern.solution.length / 2) + (i % 2)];
+    const other = pattern.solution[Math.floor(pattern.solution.length / 3)];
+    await addHeat(redis, day, unpicks > 0 ? [mid ?? 0, ...(i % 2 ? [other ?? 0] : [])] : []);
+  }
+};
+
 const open = async (pattern: StoredPattern): Promise<Day> => {
   const days = await listDays(redis);
   const day: Day = { day: days.length + 1, patternId: pattern.id, postId: `t3_preview${days.length + 1}`, createdAt: Date.now() };
   await recordDay(redis, day);
-  // Test page only: six sample solve times so the result card's standing line shows.
-  // The real game never invents players.
-  const sample = [41, 58, 73, 96, 132, 214].map((s, i) => ({ member: `t2_sample${i}`, score: s * 1000 }));
-  await redis.zAdd(leaderboardKey(day.day), ...sample);
+  await seedSamples(day.day, pattern);
   context.postId = day.postId;
   return day;
 };

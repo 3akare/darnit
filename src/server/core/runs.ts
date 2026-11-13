@@ -5,9 +5,11 @@ import { HINT_COOLDOWN_MS, badgeFor } from '../../shared/api.ts';
 import type { HintResponse, RunView, Standing, StartResponse, SubmitResponse } from '../../shared/api.ts';
 import { checkThread, compile } from '../../shared/puzzle/pattern.ts';
 import type { StoredPattern } from '../../shared/puzzle/pattern.ts';
+import { addHeat, cleanCells, notePlay, noteSolve, saveProfile } from './players.ts';
+import type { Profile } from './players.ts';
 import type { Store } from './store.ts';
 
-type Run = {
+export type Run = {
   startedAt: number;
   finishedAt: number | null;
   timeMs: number | null;
@@ -22,7 +24,7 @@ export const MIN_MS_PER_CELL = 80;
 const runKey = (day: number, userId: string): string => `run:${day}:${userId}`;
 export const leaderboardKey = (day: number): string => `lb:${day}`;
 
-const readRun = async (store: Store, day: number, userId: string): Promise<Run | undefined> => {
+export const readRun = async (store: Store, day: number, userId: string): Promise<Run | undefined> => {
   const raw = await store.get(runKey(day, userId));
   return raw ? JSON.parse(raw) : undefined;
 };
@@ -52,11 +54,19 @@ export const getRun = async (store: Store, day: number, userId: string): Promise
 };
 
 /** The first stitch. Starting twice keeps the first start time. */
-export const startRun = async (store: Store, day: number, userId: string, now: number): Promise<StartResponse> => {
+export const startRun = async (
+  store: Store,
+  day: number,
+  userId: string,
+  now: number,
+  /** True on today's pattern: the play counts toward stats. */
+  counted = false
+): Promise<StartResponse> => {
   const existing = await readRun(store, day, userId);
   if (existing) return { ok: true, run: view(existing) };
   const run: Run = { startedAt: now, finishedAt: null, timeMs: null, hints: 0, unpicks: null, lastHintAt: 0 };
   await writeRun(store, day, userId, run);
+  if (counted) await notePlay(store, day, userId);
   return { ok: true, run: view(run) };
 };
 
@@ -103,7 +113,8 @@ export const submitRun = async (
   unpicks: number,
   now: number,
   /** False on an older post: the run is checked and timed but never ranked. */
-  counted: boolean
+  counted: boolean,
+  extras: { profile?: Profile; unpickCells?: unknown } = {}
 ): Promise<SubmitResponse> => {
   const run = await readRun(store, day, userId);
   if (!run) return { ok: false, reason: 'not-started' };
@@ -129,7 +140,13 @@ export const submitRun = async (
   run.timeMs = timeMs;
   run.unpicks = cleanUnpicks;
   await writeRun(store, day, userId, run);
-  if (counted) await store.zAdd(leaderboardKey(day), { member: userId, score: timeMs });
+  const badge = badgeFor(run.hints, cleanUnpicks);
+  if (counted) {
+    await store.zAdd(leaderboardKey(day), { member: userId, score: timeMs });
+    if (extras.profile) await saveProfile(store, userId, extras.profile);
+    await noteSolve(store, day, userId, { timeMs, badge, unpicks: cleanUnpicks });
+    await addHeat(store, day, cleanCells(extras.unpickCells, pattern.size * pattern.size));
+  }
   return {
     ok: true,
     timeMs,

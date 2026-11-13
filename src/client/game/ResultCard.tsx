@@ -17,7 +17,13 @@ export type Result = {
   note: string;
 };
 
-type Props = { day: number; subredditName: string; result: Result };
+type Props = {
+  day: number;
+  subredditName: string;
+  result: Result;
+  /** In the flow of the Results page, rather than taped over the board. */
+  inline?: boolean;
+};
 
 /** Older copy path for webviews that block the async clipboard API. */
 const copyWithSelection = (text: string): boolean => {
@@ -38,7 +44,7 @@ const copyWithSelection = (text: string): boolean => {
   }
 };
 
-export const ResultCard = ({ day, subredditName, result }: Props) => {
+export const ResultCard = ({ day, subredditName, result, inline = false }: Props) => {
   const [copy, setCopy] = useState<'idle' | 'copied' | 'manual'>('idle');
   const timer = useRef(0);
   useEffect(() => () => window.clearTimeout(timer.current), []);
@@ -69,7 +75,7 @@ export const ResultCard = ({ day, subredditName, result }: Props) => {
   };
 
   return (
-    <section className="note result" aria-live="polite">
+    <section className={inline ? 'note result inline' : 'note result'} aria-live="polite">
       <h2>
         #{day} stitched in {formatTime(result.timeMs)}
       </h2>

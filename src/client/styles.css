@@ -342,3 +342,161 @@ body {
     width: calc(100% - 20px);
   }
 }
+
+/* Results page: one scroll of paper sheets. Scrolling is fine here: this is expanded mode. */
+.results {
+  max-width: 560px;
+  margin: 0 auto;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-block: 10px 28px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.countdown {
+  margin: -6px 0 0;
+  align-self: flex-start;
+  padding: 4px 12px;
+  border: 1.5px dashed rgba(22, 21, 26, 0.45);
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.note.result.inline {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  margin: 12px 4px 4px;
+}
+.sheet {
+  position: relative;
+  padding: 16px 16px 14px;
+  background: var(--note);
+  border-radius: 4px;
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.05),
+    0 10px 22px -12px rgba(0, 0, 0, 0.28);
+}
+.sheet h3 {
+  margin: 0 0 12px;
+  padding-bottom: 6px;
+  font-size: 18px;
+  font-weight: 700;
+  border-bottom: 2px dashed rgba(204, 26, 46, 0.55);
+}
+.caption {
+  margin: 10px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  text-wrap: balance;
+}
+.board-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.board-list.pinned {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1.5px dashed rgba(91, 96, 112, 0.45);
+}
+.row {
+  display: grid;
+  grid-template-columns: 2ch 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 10px;
+}
+.row.me {
+  background: rgba(204, 26, 46, 0.08);
+  outline: 2px dashed rgba(204, 26, 46, 0.6);
+  outline-offset: -2px;
+}
+.rank {
+  font-weight: 700;
+  text-align: right;
+  color: var(--graphite);
+}
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #ece8e0;
+}
+.avatar.stitched {
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.35);
+  outline: 1.5px dashed rgba(255, 255, 255, 0.8);
+  outline-offset: -5px;
+}
+.who {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.name {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.row-badge {
+  font-size: 12px;
+  color: var(--wool);
+  font-weight: 700;
+}
+.time {
+  font-weight: 700;
+  font-size: 17px;
+}
+.heat-box,
+.quilt-box {
+  display: grid;
+  place-items: center;
+}
+.quilt-box canvas {
+  cursor: pointer;
+}
+.stats {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  text-align: center;
+}
+.stats div {
+  padding: 8px 4px;
+  border: 1.5px dashed rgba(91, 96, 112, 0.4);
+  border-radius: 10px;
+}
+.stats dt {
+  font-size: 12px;
+  color: var(--graphite);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.stats dd {
+  margin: 2px 0 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+.discuss {
+  align-self: stretch;
+}
+.solvers {
+  margin: 0;
+  color: var(--graphite);
+  font-weight: 700;
+}

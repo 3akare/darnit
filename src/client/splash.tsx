@@ -31,6 +31,11 @@ const Splash = () => {
           <Level difficulty={today.pattern.difficulty} />
         </div>
       ) : null}
+      {today && today.solvers > 0 ? (
+        <p className="solvers">
+          {today.solvers} {today.solvers === 1 ? 'person' : 'people'} stitched today
+        </p>
+      ) : null}
       {time !== null ? <p>Stitched in {formatTime(time)}</p> : null}
       <button type="button" className="patch wool" onClick={(e) => requestExpandedMode(e.nativeEvent, 'game')}>
         {time !== null ? 'See your result' : 'Start stitching'}
