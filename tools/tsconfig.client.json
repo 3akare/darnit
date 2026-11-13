@@ -3,11 +3,17 @@
   "compilerOptions": {
     "outDir": "../dist/types/client",
     "tsBuildInfoFile": "../dist/types/client/tsconfig.tsbuildinfo",
-    "customConditions": ["browser"],
+    "customConditions": [
+      "browser"
+    ],
     "rootDir": "../src/client"
   },
-  "include": ["../src/client/**/*"],
-  "exclude": [],
+  "include": [
+    "../src/client/**/*"
+  ],
+  "exclude": [
+    "../src/**/*.test.ts"
+  ],
   "references": [
     {
       "path": "./tsconfig.shared.json"

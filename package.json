@@ -12,7 +12,8 @@
     "login": "devvit login",
     "prettier": "prettier --write .",
     "test:types": "tsc --build",
-    "test:unit": "node --experimental-strip-types --no-warnings=ExperimentalWarning --test \"src/**/*.test.ts\""
+    "test:unit": "node --experimental-strip-types --no-warnings=ExperimentalWarning --test \"src/**/*.test.ts\"",
+    "bank:generate": "node --experimental-strip-types --no-warnings=ExperimentalWarning tools/generate-bank.ts"
   },
   "engines": {
     "node": ">=24.0.0"
