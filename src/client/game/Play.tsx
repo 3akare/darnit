@@ -11,7 +11,8 @@ import type { Stitch } from '../../shared/puzzle/stitching.ts';
 const NEEDLES_FOR = { easy: 1, medium: 2, hard: 3 };
 import { askHint, startRun, submitThread } from '../api.ts';
 import { Board } from './Board.tsx';
-import { Icon, Needles, Spiral } from './Craft.tsx';
+import { Icon, Needles } from './Craft.tsx';
+import { Spiral } from './Spiral.tsx';
 import { Logo } from './Logo.tsx';
 
 type Result = { timeMs: number; hints: number; unpicks: number; counted: boolean; note: string };
@@ -138,13 +139,34 @@ export const Play = ({ today, skew }: Props) => {
   };
 
   const total = board.total;
+  const lastButton = pattern.buttons[pattern.buttons.length - 1] ?? -1;
+  // Every button joined but squares left over: say so plainly and show which squares.
+  const endedEarly = !result && thread.length < total && thread.includes(lastButton);
+  const empty = useMemo(() => {
+    if (!endedEarly) return [];
+    const count = new Map<number, number>();
+    for (const c of thread) count.set(c, (count.get(c) ?? 0) + 1);
+    const out: number[] = [];
+    for (let c = 0; c < board.count; c++) {
+      if ((count.get(c) ?? 0) < (board.isCross[c] ? 2 : 1)) out.push(c);
+    }
+    return out;
+  }, [endedEarly, thread, board]);
+  const emptySquares = empty.length;
+  const status = message
+    ? message
+    : endedEarly
+      ? `Every square must be filled: ${emptySquares} still empty. Unpick and fill them.`
+      : thread.length <= 1 && !result
+        ? `Join 1 to ${pattern.buttons.length} in order and fill every square.`
+        : `${thread.length} of ${total} stitches`;
   const badge = result ? badgeLabel(badgeFor(result.hints, result.unpicks), result.unpicks) : '';
 
   return (
     <main className="play">
       <Spiral />
       <header className="masthead">
-        <Logo height={54} />
+        <Logo height={58} />
         <div className="meta">
           <span className="number">No. {today.day}</span>
           <Needles count={NEEDLES_FOR[pattern.difficulty]} label={`${pattern.difficulty} pattern`} />
@@ -169,11 +191,12 @@ export const Play = ({ today, skew }: Props) => {
         hintUntil={hint.until}
         solved={Boolean(result)}
         locked={Boolean(result)}
+        empty={empty}
         onStitch={onStitch}
       />
 
-      <p className="status" role="status">
-        {message || `${thread.length} of ${total} stitches`}
+      <p className={endedEarly ? 'status warn' : 'status'} role="status">
+        {status}
       </p>
 
       <footer className="bar controls">

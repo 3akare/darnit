@@ -4,6 +4,7 @@
 
 import '@fontsource/space-grotesk/latin-500.css';
 import '@fontsource/space-grotesk/latin-700.css';
+import '@fontsource/alfa-slab-one/latin-400.css';
 import '../client/styles.css';
 import './preview.css';
 

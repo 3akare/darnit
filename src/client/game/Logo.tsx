@@ -1,10 +1,14 @@
-// The DarnIt! logo, embroidered into the page: each letter a satin-stitch fill in its own
-// colour, with a split-stitch outline, a raised shadow and the paper lifting round it.
+// The DarnIt! logo as embroidered varsity lettering, like a college hoodie: heavy slab
+// capitals set on a gentle arch, each letter in its own colour, with a cream twill outline
+// and a dark stitched edge, all in satin stitch and raised off the page.
 
 import { useEffect, useRef } from 'react';
 
-const LETTERS = ['D', 'a', 'r', 'n', 'I', 't', '!'];
-const COLOURS = ['#E11D48', '#F59E0B', '#16A34A', '#0891B2', '#2F5BEA', '#C026D3', '#EA580C'];
+const LETTERS = ['D', 'A', 'R', 'N', 'I', 'T', '!'];
+const COLOURS = ['#D7263D', '#F29E0C', '#1F9D55', '#0E8FAE', '#2F5BEA', '#B4269C', '#E8590C'];
+const FONT_FAMILY = '"Alfa Slab One", Georgia, serif';
+const TWILL = '#FFF6E2';
+const EDGE = '#1C1B20';
 
 /** Mix a colour toward black (f < 0) or white (f > 0). */
 const shade = (hex: string, f: number): string => {
@@ -13,30 +17,31 @@ const shade = (hex: string, f: number): string => {
   return `rgb(${mix(n >> 16)}, ${mix((n >> 8) & 255)}, ${mix(n & 255)})`;
 };
 
-/**
- * The capital I as an I-beam with serif bars, drawn as a path. In a plain sans it looks like
- * a lowercase l, and the name would read "Darnlt".
- */
-const iBeam = (x: number, baseline: number, cap: number, stem: number): Path2D => {
-  const bar = stem * 0.85;
-  const half = stem * 1.45;
-  const mid = x + half;
-  const top = baseline - cap;
-  const p = new Path2D();
-  p.moveTo(x, top);
-  p.lineTo(x + half * 2, top);
-  p.lineTo(x + half * 2, top + bar);
-  p.lineTo(mid + stem / 2, top + bar);
-  p.lineTo(mid + stem / 2, baseline - bar);
-  p.lineTo(x + half * 2, baseline - bar);
-  p.lineTo(x + half * 2, baseline);
-  p.lineTo(x, baseline);
-  p.lineTo(x, baseline - bar);
-  p.lineTo(mid - stem / 2, baseline - bar);
-  p.lineTo(mid - stem / 2, top + bar);
-  p.lineTo(x, top + bar);
-  p.closePath();
-  return p;
+/** A small tile of satin stitches in one colour, for use as a fill pattern. */
+const satin = (ctx: CanvasRenderingContext2D, colour: string, dpr: number): CanvasPattern | string => {
+  const t = Math.max(2, Math.round(1.6 * dpr)) * 2;
+  const tile = document.createElement('canvas');
+  tile.width = t;
+  tile.height = t;
+  const g = tile.getContext('2d');
+  if (!g) return colour;
+  g.fillStyle = colour;
+  g.fillRect(0, 0, t, t);
+  const step = t / 2;
+  g.lineWidth = Math.max(1, dpr * 0.45);
+  for (let k = -t; k <= 2 * t; k += step) {
+    g.strokeStyle = shade(colour, -0.2);
+    g.beginPath();
+    g.moveTo(k, 0);
+    g.lineTo(k - t, t);
+    g.stroke();
+    g.strokeStyle = shade(colour, 0.3);
+    g.beginPath();
+    g.moveTo(k + step / 2, 0);
+    g.lineTo(k + step / 2 - t, t);
+    g.stroke();
+  }
+  return ctx.createPattern(tile, 'repeat') ?? colour;
 };
 
 export const Logo = ({ height }: { height: number }) => {
@@ -51,129 +56,95 @@ export const Logo = ({ height }: { height: number }) => {
     const draw = () => {
       if (!alive) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 3);
-      const fontPx = Math.round(height * 0.86);
-      const font = `700 ${fontPx}px "Space Grotesk", system-ui, sans-serif`;
+      const fontPx = Math.round(height * 0.62);
+      const font = `400 ${fontPx}px ${FONT_FAMILY}`;
+      const edgeW = fontPx * 0.26;
+      const twillW = fontPx * 0.17;
       ctx.font = font;
-      const iMetrics = ctx.measureText('I');
-      const cap = iMetrics.actualBoundingBoxAscent || fontPx * 0.7;
-      const stem = Math.max(2, (iMetrics.actualBoundingBoxRight + iMetrics.actualBoundingBoxLeft) || fontPx * 0.14);
-      const widths = LETTERS.map((ch) => (ch === 'I' ? stem * 2.9 : ctx.measureText(ch).width));
-      const gap = fontPx * 0.03;
-      const padX = fontPx * 0.1;
-      const width = Math.ceil(widths.reduce((a, b) => a + b, 0) + gap * (LETTERS.length - 1) + padX * 2);
+      const widths = LETTERS.map((ch) => ctx.measureText(ch).width);
+      const track = fontPx * 0.11;
+      const run = widths.reduce((a, b) => a + b, 0) + track * (LETTERS.length - 1);
+      const width = Math.ceil(run + edgeW * 2);
+
+      // Set the letters on an arch: a circle well below the logo.
+      const radius = run * 2.1;
+      const cx = width / 2;
+      const capTop = height * 0.08 + edgeW / 2;
+      const cy = capTop + radius;
+      const placed: { ch: string; angle: number; w: number; colour: string }[] = [];
+      let along = -run / 2;
+      LETTERS.forEach((ch, i) => {
+        const w = widths[i] ?? 0;
+        placed.push({ ch, angle: (along + w / 2) / radius, w, colour: COLOURS[i] ?? '#D7263D' });
+        along += w + track;
+      });
+
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
-      const baseline = height * 0.8;
-      const xs: number[] = [];
-      let x = padX;
-      for (const w of widths) {
-        xs.push(x);
-        x += w + gap;
-      }
-      /** Fill or stroke one letter: text for most, a path for the I. */
-      const paint = (target: CanvasRenderingContext2D, i: number, mode: 'fill' | 'stroke', dx = 0, dy = 0) => {
-        const ch = LETTERS[i] ?? '';
-        const lx = (xs[i] ?? 0) + dx;
-        if (ch === 'I') {
-          const path = iBeam(lx, baseline + dy, cap, stem);
-          if (mode === 'fill') target.fill(path);
-          else target.stroke(path);
-        } else if (mode === 'fill') {
-          target.fillText(ch, lx, baseline + dy);
-        } else {
-          target.strokeText(ch, lx, baseline + dy);
+
+      const comp = document.createElement('canvas');
+      comp.width = canvas.width;
+      comp.height = canvas.height;
+      const c = comp.getContext('2d');
+      if (!c) return;
+      c.font = font;
+      c.textAlign = 'center';
+      c.textBaseline = 'alphabetic';
+      c.lineJoin = 'round';
+
+      const each = (fn: (p: (typeof placed)[number]) => void) => {
+        for (const p of placed) {
+          c.setTransform(dpr, 0, 0, dpr, 0, 0);
+          c.translate(cx, cy);
+          c.rotate(p.angle);
+          c.translate(0, -radius + fontPx * 0.72);
+          fn(p);
         }
       };
 
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, width, height);
-      ctx.font = font;
-      ctx.lineJoin = 'round';
+      // Dark stitched edge, then the cream twill outline, under every letter.
+      c.strokeStyle = EDGE;
+      c.lineWidth = edgeW;
+      each((p) => c.strokeText(p.ch, 0, 0));
+      c.strokeStyle = satin(c, TWILL, dpr);
+      c.lineWidth = twillW;
+      each((p) => c.strokeText(p.ch, 0, 0));
 
-      // The paper lifts slightly round the stitching.
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.07)';
-      ctx.lineWidth = fontPx * 0.11;
-      LETTERS.forEach((_, i) => paint(ctx, i, 'stroke', 0.8, 1.2));
-      ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
-      ctx.lineWidth = fontPx * 0.09;
-      LETTERS.forEach((_, i) => paint(ctx, i, 'stroke', -0.6, -0.8));
-
-      // Satin fill, one letter at a time on a scratch canvas, masked to the glyph.
-      const scratch = document.createElement('canvas');
-      scratch.width = canvas.width;
-      scratch.height = canvas.height;
-      const s = scratch.getContext('2d');
-      if (!s) return;
-      LETTERS.forEach((_, i) => {
-        const colour = COLOURS[i] ?? '#E11D48';
-        const lx = xs[i] ?? 0;
-        const lw = widths[i] ?? 0;
-        s.setTransform(1, 0, 0, 1, 0, 0);
-        s.globalCompositeOperation = 'source-over';
-        s.clearRect(0, 0, scratch.width, scratch.height);
-        s.setTransform(dpr, 0, 0, dpr, 0, 0);
-        s.fillStyle = colour;
-        s.fillRect(lx - 4, 0, lw + 8, height);
-
-        s.save();
-        s.translate(lx + lw / 2, height / 2);
-        s.rotate(i % 2 ? -0.7 : 0.7);
-        const span = height * 1.4;
-        for (let k = -span; k < span; k += 1.7) {
-          s.strokeStyle = shade(colour, -0.32);
-          s.globalAlpha = 0.55;
-          s.lineWidth = 0.55;
-          s.beginPath();
-          s.moveTo(-span, k);
-          s.lineTo(span, k);
-          s.stroke();
-          s.strokeStyle = shade(colour, 0.35);
-          s.globalAlpha = 0.5;
-          s.lineWidth = 0.5;
-          s.beginPath();
-          s.moveTo(-span, k + 0.85);
-          s.lineTo(span, k + 0.85);
-          s.stroke();
-        }
-        s.restore();
-        s.globalAlpha = 1;
-        const sheen = s.createLinearGradient(lx, 0, lx + lw, height);
-        sheen.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
-        sheen.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
-        sheen.addColorStop(1, 'rgba(0, 0, 0, 0.2)');
-        s.fillStyle = sheen;
-        s.fillRect(lx - 4, 0, lw + 8, height);
-
-        s.globalCompositeOperation = 'destination-in';
-        s.font = font;
-        s.fillStyle = '#000';
-        paint(s, i, 'fill');
-
-        ctx.save();
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.shadowColor = 'rgba(40, 16, 16, 0.38)';
-        ctx.shadowBlur = 2.5 * dpr;
-        ctx.shadowOffsetX = 0.6 * dpr;
-        ctx.shadowOffsetY = 1.8 * dpr;
-        ctx.drawImage(scratch, 0, 0);
-        ctx.restore();
-
-        // Split-stitch outline in a deeper shade.
-        ctx.save();
-        ctx.font = font;
-        ctx.strokeStyle = shade(colour, -0.45);
-        ctx.lineWidth = Math.max(1.3, fontPx * 0.042);
-        ctx.lineCap = 'round';
-        ctx.setLineDash([fontPx * 0.075, fontPx * 0.03]);
-        paint(ctx, i, 'stroke');
-        ctx.restore();
+      // Each letter in its own colour, in satin stitch, with a fine darker edge.
+      each((p) => {
+        c.fillStyle = satin(c, p.colour, dpr);
+        c.fillText(p.ch, 0, 0);
+        c.strokeStyle = shade(p.colour, -0.38);
+        c.lineWidth = Math.max(1, fontPx * 0.022);
+        c.strokeText(p.ch, 0, 0);
       });
+
+      // Light falls from the top left across the raised stitching.
+      c.setTransform(1, 0, 0, 1, 0, 0);
+      c.globalCompositeOperation = 'source-atop';
+      const sheen = c.createLinearGradient(0, 0, comp.width * 0.4, comp.height);
+      sheen.addColorStop(0, 'rgba(255, 255, 255, 0.28)');
+      sheen.addColorStop(0.55, 'rgba(255, 255, 255, 0)');
+      sheen.addColorStop(1, 'rgba(0, 0, 0, 0.16)');
+      c.fillStyle = sheen;
+      c.fillRect(0, 0, comp.width, comp.height);
+      c.globalCompositeOperation = 'source-over';
+
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.shadowColor = 'rgba(30, 20, 20, 0.4)';
+      ctx.shadowBlur = 3 * dpr;
+      ctx.shadowOffsetX = 0.8 * dpr;
+      ctx.shadowOffsetY = 2.2 * dpr;
+      ctx.drawImage(comp, 0, 0);
+      ctx.restore();
     };
 
     draw();
-    void document.fonts.load(`700 ${Math.round(height * 0.86)}px "Space Grotesk"`).then(draw, () => undefined);
+    void document.fonts.load(`400 ${Math.round(height * 0.62)}px "Alfa Slab One"`, 'DARNIT!').then(draw, () => undefined);
     return () => {
       alive = false;
     };

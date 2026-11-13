@@ -40,7 +40,7 @@ The player sews one thread from button 1 to the last button, passing every butto
 
 1. Start on button 1. Move one cell at a time: up, down, left or right.
 2. Pass the buttons in number order and finish on the highest one.
-3. Fill every cell exactly once, except cross-stitch cells.
+3. Fill every cell exactly once, except cross-stitch cells. Before the first stitch the status line says so ("Join 1 to 9 in order and fill every square."). If the thread reaches the last button with squares left, the status line says how many are empty and the board hatches them until the player unpicks.
 4. Seams (thick stitched lines between cells) block movement.
 5. Cross-stitch cells, marked with a faint X, must be passed twice: once horizontally and once vertically, straight through both times. They are the only place the thread may cross itself.
 
@@ -197,13 +197,13 @@ A sketchbook page with real craft materials on it: red wool stretched across whi
 
 Materials:
 
-- **Paper:** white sketchbook paper with a fine grain, faint fibres and specks, and a spiral binding along the top. One look in every system theme: the game is always on white paper, with no dark mode.
+- **Paper:** white sketchbook paper with a fine grain, faint fibres and specks, and a steel ring binding along the top, coming out of punched holes. One look in every system theme: the game is always on white paper, with no dark mode.
 - **Board:** a pencil grid drawn straight onto the paper, clearly visible, with a hole pricked through the paper at every grid corner, like paper embroidery.
 - **Thread:** red wool about a third of a cell wide: round shading, twisted plies, fine fibres and loose fuzz, and a soft shadow on the paper. Its cut end at button 1 is frayed and taped down with a strip of clear tape; the last end gets taped when the pattern is solved. While dragging, the wool lifts off the page and follows the finger, with a steel needle at its end.
-- **Buttons:** glossy black buttons with bold white numbers. When the wool reaches one, a thin strand of wool rings it.
+- **Buttons:** real buttons, mixed like a tin of odd ones: round, square, scalloped flower, hexagon and domed brass shank shapes, in navy, mustard, wood, mother-of-pearl, green, black, red and purple. Raised rim, dished centre, thread holes above and below the number so they never cover it. The same pattern always gets the same buttons. When the wool reaches one, a thin strand of wool rings it.
 - **Seams:** black thread in a running stitch along the cell edge, much heavier than the pencil grid.
 - **Cross-stitch cells:** a pencil X in a dashed pencil ring. After the first pass, a dashed ink ring and two ink chevrons are drawn on top of the wool, pointing along the pass still owed, so the cell never disappears under the thread. On the second pass the wool crosses over the first strand.
-- **Logo:** "DarnIt!" embroidered into the page: each letter a satin-stitch fill in its own colour (red, marigold, green, teal, cobalt, magenta, orange), with a split-stitch outline and a raised shadow. The capital I has serif bars so it never reads as a lowercase l.
+- **Logo:** embroidered varsity lettering, like a college hoodie: "DARNIT!" in heavy slab capitals (Alfa Slab One) on a gentle arch, each letter a satin-stitch fill in its own colour (red, marigold, green, teal, cobalt, magenta, orange), with a cream twill outline, a dark edge and a raised shadow. Players still read the name as DarnIt!.
 - **Controls:** embroidered patches: a solid colour with a satin texture, a dashed stitched border and a raised shadow. Undo is cobalt, Hint is magenta, Reset is black, Start stitching is wool red.
 - **Results:** a paper note taped over the page.
 
@@ -219,7 +219,9 @@ Materials:
 
 All text meets 4.5:1 contrast, and button numbers stay at least 16 px on an 8×8 board on a 360 px-wide phone.
 
-Type: Space Grotesk for everything, with tabular numbers, bundled with the app rather than loaded from Google.
+Type: Space Grotesk for everything, with tabular numbers; Alfa Slab One for the logo only. Both bundled with the app rather than loaded from Google.
+
+Scale: the board takes about 90% of the screen width with paper showing round it, so the page never feels pressed against the face.
 
 Motion:
 

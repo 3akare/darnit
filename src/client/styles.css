@@ -50,13 +50,13 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 50px;
-  padding: 10px 20px;
+  min-height: 44px;
+  padding: 8px 18px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 13px;
   color: #ffffff;
   font: inherit;
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.01em;
   background-color: var(--patch);
@@ -172,8 +172,8 @@ body {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding-bottom: 12px;
+  gap: 6px;
+  padding-bottom: 14px;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   overflow: hidden;
@@ -185,6 +185,9 @@ body {
 .spiral {
   display: block;
   flex: none;
+  width: calc(100% + max(16px, env(safe-area-inset-left, 0px)) + max(16px, env(safe-area-inset-right, 0px)));
+  height: 34px;
+  margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
 }
 .masthead {
   display: flex;
@@ -194,7 +197,7 @@ body {
 }
 .logo {
   display: block;
-  max-width: 70%;
+  max-width: 68%;
   height: auto;
 }
 .meta {
@@ -215,7 +218,7 @@ body {
   gap: 12px;
 }
 .timer {
-  font-size: 34px;
+  font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.01em;
   min-width: 4ch;
@@ -235,7 +238,15 @@ body {
   text-align: center;
   font-size: 14px;
   color: var(--graphite);
-  min-height: 1.35em;
+  min-height: 2.7em;
+  text-wrap: balance;
+}
+.status.warn {
+  color: #9a5a00;
+  font-weight: 700;
+}
+.controls {
+  padding-inline: 5%;
 }
 .controls .patch {
   flex: 1;

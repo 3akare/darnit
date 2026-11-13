@@ -450,46 +450,220 @@ export const drawTape = (ctx: Ctx, x: number, y: number, angle: number, len: num
 
 // ---------------------------------------------------------------- buttons
 
-/** A glossy black button with a white number. */
-const drawButton = (ctx: Ctx, geo: Geometry, x: number, y: number, n: number): void => {
-  const r = geo.cell * 0.36;
+/** Button shapes and materials. Each pattern mixes them, like a tin of odd buttons. */
+type Shape = 'round' | 'square' | 'flower' | 'hex' | 'shank';
+type Material = {
+  base: string;
+  light: string;
+  dark: string;
+  /** Number colour and the halo behind it, chosen for contrast on this material. */
+  text: string;
+  halo: string;
+  grain?: boolean;
+  pearl?: boolean;
+};
+type ButtonStyle = { shape: Shape; holes: 0 | 2 | 4; material: Material };
+
+const MATERIALS: Material[] = [
+  { base: '#24345E', light: '#5B76C2', dark: '#0F1630', text: '#FFFFFF', halo: 'rgba(6, 10, 26, 0.75)' },
+  { base: '#E2A51F', light: '#FFD66A', dark: '#8F6406', text: '#1D1505', halo: 'rgba(255, 238, 190, 0.7)' },
+  { base: '#B07843', light: '#DDAA72', dark: '#5E3815', text: '#FFFFFF', halo: 'rgba(48, 24, 6, 0.85)', grain: true },
+  { base: '#EDE6DA', light: '#FFFFFF', dark: '#B9AE9C', text: '#1B1A20', halo: 'rgba(255, 255, 255, 0.8)', pearl: true },
+  { base: '#2E8C6C', light: '#79CCAA', dark: '#134634', text: '#FFFFFF', halo: 'rgba(5, 30, 20, 0.8)' },
+  { base: '#1E1D22', light: '#5A5862', dark: '#08080A', text: '#FFFFFF', halo: 'rgba(0, 0, 0, 0.8)' },
+  { base: '#D9473A', light: '#FF8C7C', dark: '#7C1A12', text: '#FFFFFF', halo: 'rgba(60, 8, 4, 0.85)' },
+  { base: '#7A4FB8', light: '#B79AE6', dark: '#3A1E66', text: '#FFFFFF', halo: 'rgba(24, 8, 48, 0.8)' },
+];
+const BRASS: Material = { base: '#C79A3A', light: '#FFE59A', dark: '#6E4F0E', text: '#1E1503', halo: 'rgba(255, 240, 200, 0.75)' };
+const SHAPES: { shape: Shape; holes: 0 | 2 | 4 }[] = [
+  { shape: 'round', holes: 4 },
+  { shape: 'round', holes: 2 },
+  { shape: 'square', holes: 4 },
+  { shape: 'flower', holes: 2 },
+  { shape: 'hex', holes: 4 },
+  { shape: 'shank', holes: 0 },
+];
+
+/** The same pattern always gets the same buttons. */
+export const buttonStyles = (pattern: Pattern): ButtonStyle[] => {
+  let seed = 7;
+  for (const ch of pattern.id) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+  const rnd = seeded(seed);
+  const materials = [...MATERIALS].sort(() => rnd() - 0.5);
+  const shapes = [...SHAPES].sort(() => rnd() - 0.5);
+  return pattern.buttons.map((_, i) => {
+    const form = shapes[i % shapes.length] ?? { shape: 'round', holes: 4 };
+    const material = form.shape === 'shank' ? BRASS : (materials[i % materials.length] ?? BRASS);
+    return { ...form, material };
+  });
+};
+
+/** The outline of a button shape, centred on (x, y) with radius r. */
+const buttonPath = (shape: Shape, x: number, y: number, r: number): Path2D => {
+  const p = new Path2D();
+  if (shape === 'square') {
+    const s = r * 0.9;
+    p.roundRect(x - s, y - s, s * 2, s * 2, r * 0.36);
+  } else if (shape === 'flower') {
+    const steps = 96;
+    for (let i = 0; i <= steps; i++) {
+      const a = (i / steps) * Math.PI * 2;
+      const rr = r * (0.9 + 0.1 * Math.cos(a * 8));
+      if (i === 0) p.moveTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+      else p.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+    }
+    p.closePath();
+  } else if (shape === 'hex') {
+    const corner = r * 0.16;
+    const pts: Pt[] = [];
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + Math.PI / 6;
+      pts.push([x + Math.cos(a) * r * 0.98, y + Math.sin(a) * r * 0.98]);
+    }
+    const last = pts[5] ?? [x, y];
+    const first = pts[0] ?? [x, y];
+    p.moveTo((last[0] + first[0]) / 2, (last[1] + first[1]) / 2);
+    for (let i = 0; i < 6; i++) {
+      const a = pts[i] ?? [x, y];
+      const b = pts[(i + 1) % 6] ?? [x, y];
+      p.arcTo(a[0], a[1], (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, corner);
+    }
+    p.closePath();
+  } else {
+    p.arc(x, y, r, 0, Math.PI * 2);
+  }
+  return p;
+};
+
+/** A real sew-through or shank button, with a number on its face. */
+const drawButton = (ctx: Ctx, geo: Geometry, x: number, y: number, n: number, style: ButtonStyle): void => {
+  const r = geo.cell * 0.4;
+  const { material: m, shape } = style;
+  const outline = buttonPath(shape, x, y, r);
+
+  // Cast shadow on the paper.
   ctx.save();
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.38)';
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.36)';
   ctx.shadowBlur = r * 0.4 * geo.dpr;
   ctx.shadowOffsetX = r * 0.06 * geo.dpr;
-  ctx.shadowOffsetY = r * 0.18 * geo.dpr;
-  const body = ctx.createRadialGradient(x - r * 0.35, y - r * 0.42, r * 0.08, x, y, r);
-  body.addColorStop(0, '#5B5963');
-  body.addColorStop(0.55, '#242329');
-  body.addColorStop(1, '#0C0B0F');
-  ctx.fillStyle = body;
+  ctx.shadowOffsetY = r * 0.2 * geo.dpr;
+  ctx.fillStyle = m.base;
+  ctx.fill(outline);
+  ctx.restore();
+
+  // Raised rim: lit from the top left.
+  const rim = ctx.createLinearGradient(x - r, y - r, x + r, y + r);
+  rim.addColorStop(0, m.light);
+  rim.addColorStop(0.5, m.base);
+  rim.addColorStop(1, m.dark);
+  ctx.fillStyle = rim;
+  ctx.fill(outline);
+
+  ctx.save();
+  ctx.clip(outline);
+  if (m.pearl) {
+    // Mother-of-pearl: soft bands of pink, green and blue.
+    const sheen = ctx.createLinearGradient(x - r, y + r * 0.3, x + r, y - r * 0.3);
+    sheen.addColorStop(0, 'rgba(255, 190, 210, 0.35)');
+    sheen.addColorStop(0.35, 'rgba(200, 255, 235, 0.3)');
+    sheen.addColorStop(0.7, 'rgba(190, 210, 255, 0.35)');
+    sheen.addColorStop(1, 'rgba(255, 230, 200, 0.3)');
+    ctx.fillStyle = sheen;
+    ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  if (m.grain) {
+    // Wood grain: wavy rings.
+    const rnd = seeded(n * 97 + 3);
+    ctx.strokeStyle = 'rgba(70, 38, 12, 0.32)';
+    ctx.lineWidth = 0.8;
+    for (let k = -6; k <= 6; k++) {
+      const off = (k / 6) * r + (rnd() - 0.5) * r * 0.08;
+      ctx.beginPath();
+      ctx.moveTo(x - r, y + off);
+      ctx.bezierCurveTo(x - r * 0.3, y + off - r * 0.15, x + r * 0.3, y + off + r * 0.15, x + r, y + off - r * 0.05);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  if (shape === 'shank') {
+    // A domed metal button: bright crown, no holes.
+    const dome = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.05, x, y, r);
+    dome.addColorStop(0, '#FFF8D6');
+    dome.addColorStop(0.3, m.light);
+    dome.addColorStop(0.75, m.base);
+    dome.addColorStop(1, m.dark);
+    ctx.fillStyle = dome;
+    ctx.fill(outline);
+    ctx.strokeStyle = 'rgba(80, 56, 10, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.78, 0, Math.PI * 2);
+    ctx.stroke();
+  } else {
+    // Dished centre: shaded the opposite way to the rim, so it reads as sunk.
+    const inner = buttonPath(shape, x, y, r * 0.76);
+    const dish = ctx.createLinearGradient(x - r, y - r, x + r, y + r);
+    dish.addColorStop(0, m.dark);
+    dish.addColorStop(0.55, m.base);
+    dish.addColorStop(1, m.light);
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = dish;
+    ctx.fill(inner);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = m.base;
+    ctx.fill(buttonPath(shape, x, y, r * 0.66));
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+    ctx.lineWidth = 1;
+    ctx.stroke(buttonPath(shape, x + 0.4, y + 0.6, r * 0.76));
+
+    // Thread holes, above and below the number so they never cover it.
+    const holes: Pt[] =
+      style.holes === 4
+        ? [
+            [-0.3, -0.5],
+            [0.3, -0.5],
+            [-0.3, 0.5],
+            [0.3, 0.5],
+          ]
+        : [
+            [0, -0.5],
+            [0, 0.5],
+          ];
+    const hr = Math.max(1.3, r * 0.085);
+    for (const [hx, hy] of holes) {
+      const px = x + hx * r;
+      const py = y + hy * r;
+      ctx.fillStyle = 'rgba(12, 10, 14, 0.85)';
+      ctx.beginPath();
+      ctx.arc(px, py, hr, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.arc(px, py, hr, 0.1 * Math.PI, 0.9 * Math.PI);
+      ctx.stroke();
+    }
+  }
+
+  // Highlight on the top-left rim.
+  ctx.save();
+  ctx.clip(outline);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
   ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.ellipse(x - r * 0.42, y - r * 0.55, r * 0.38, r * 0.14, -0.6, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
-  ctx.lineWidth = Math.max(1, r * 0.09);
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-  ctx.beginPath();
-  ctx.arc(x, y, r * 0.84, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
-  ctx.beginPath();
-  ctx.arc(x, y, r * 0.74, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-  ctx.beginPath();
-  ctx.ellipse(x - r * 0.36, y - r * 0.48, r * 0.34, r * 0.15, -0.55, 0, Math.PI * 2);
-  ctx.fill();
-
-  const fontPx = Math.max(16, Math.round(geo.cell * 0.4));
+  const fontPx = Math.max(16, Math.round(geo.cell * 0.38));
   ctx.font = `700 ${fontPx}px "Space Grotesk", system-ui, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-  ctx.fillText(String(n), x, y + 2);
-  ctx.fillStyle = '#FFFFFF';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = m.halo;
+  ctx.lineWidth = Math.max(2.5, fontPx * 0.2);
+  ctx.strokeText(String(n), x, y + 1);
+  ctx.fillStyle = m.text;
   ctx.fillText(String(n), x, y + 1);
 };
 
@@ -557,7 +731,13 @@ const runsOf = (board: Board, thread: readonly number[]): number[][] => {
 };
 
 /** Everything that changes only when the thread changes: wool, tape, buttons, marks. */
-export const drawThreadLayer = (geo: Geometry, board: Board, thread: readonly number[], solved: boolean): HTMLCanvasElement => {
+export const drawThreadLayer = (
+  geo: Geometry,
+  board: Board,
+  styles: readonly ButtonStyle[],
+  thread: readonly number[],
+  solved: boolean
+): HTMLCanvasElement => {
   const [canvas, ctx] = newCanvas(geo);
   if (!ctx) return canvas;
   const { cell } = geo;
@@ -605,8 +785,8 @@ export const drawThreadLayer = (geo: Geometry, board: Board, thread: readonly nu
   const reached = new Set(thread);
   board.buttons.forEach((c, n) => {
     const [x, y] = centre(geo, c);
-    drawButton(ctx, geo, x, y, n + 1);
-    if (reached.has(c)) drawWool(ctx, ringPoints(x, y, cell * 0.37, 28), w * 0.2, c * 13 + 5);
+    drawButton(ctx, geo, x, y, n + 1, styles[n] ?? { shape: 'round', holes: 4, material: BRASS });
+    if (reached.has(c)) drawWool(ctx, ringPoints(x, y, cell * 0.45, 30), w * 0.2, c * 13 + 5);
   });
 
   drawTape(ctx, sx + cx * cell * 0.4, sy + cy * cell * 0.4, Math.atan2(cy, cx) + Math.PI / 2 + 0.12, cell * 0.78, cell * 0.32, first + 101);
@@ -672,6 +852,8 @@ export type Live = {
   popAt: number;
   solved: boolean;
   reducedMotion: boolean;
+  /** Squares the thread still owes, hatched when the last button was reached too early. */
+  empty: readonly number[];
 };
 
 /** Draw one frame. Returns true while something is still animating. */
@@ -729,6 +911,37 @@ export const drawFrame = (
       }
       drawNeedle(ctx, geo, hx + ux * cell * 0.12, hy + uy * cell * 0.12, ux, uy, cell * 0.62);
     }
+  }
+
+  if (live.empty.length > 0) {
+    // Marigold pencil hatching on every square still to fill, gently pulsing.
+    animating = !live.reducedMotion;
+    const pulse = live.reducedMotion ? 0.8 : 0.6 + 0.3 * Math.sin(now / 260);
+    ctx.save();
+    ctx.globalAlpha = pulse;
+    ctx.strokeStyle = '#E8940C';
+    ctx.lineWidth = Math.max(2, cell * 0.05);
+    ctx.lineCap = 'round';
+    for (const c of live.empty) {
+      const x0 = geo.pad + (c % geo.size) * cell;
+      const y0 = geo.pad + Math.floor(c / geo.size) * cell;
+      const inset = cell * 0.14;
+      ctx.beginPath();
+      ctx.roundRect(x0 + inset, y0 + inset, cell - inset * 2, cell - inset * 2, cell * 0.12);
+      ctx.save();
+      ctx.clip();
+      ctx.beginPath();
+      for (let k = -cell; k < cell; k += cell * 0.16) {
+        ctx.moveTo(x0 + k, y0 + cell);
+        ctx.lineTo(x0 + k + cell, y0);
+      }
+      ctx.stroke();
+      ctx.restore();
+      ctx.beginPath();
+      ctx.roundRect(x0 + inset, y0 + inset, cell - inset * 2, cell - inset * 2, cell * 0.12);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   if (live.hintCell >= 0 && now < live.hintUntil) {

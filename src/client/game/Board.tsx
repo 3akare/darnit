@@ -10,7 +10,7 @@ import { directionBetween } from '../../shared/puzzle/pattern.ts';
 import type { Board as CompiledBoard, Pattern } from '../../shared/puzzle/pattern.ts';
 import { cutTo, dragTo } from '../../shared/puzzle/stitching.ts';
 import type { Stitch } from '../../shared/puzzle/stitching.ts';
-import { cellAt, centre, drawBackdrop, drawFrame, drawThreadLayer, layout } from './draw.ts';
+import { buttonStyles, cellAt, centre, drawBackdrop, drawFrame, drawThreadLayer, layout } from './draw.ts';
 import type { Geometry, Live } from './draw.ts';
 
 type Props = {
@@ -21,6 +21,8 @@ type Props = {
   hintUntil: number;
   solved: boolean;
   locked: boolean;
+  /** Squares to hatch because the thread reached the last button too early. */
+  empty: readonly number[];
   /** Every change the finger makes: drag steps and taps that cut the thread back. */
   onStitch: (stitch: Stitch) => void;
 };
@@ -33,7 +35,7 @@ const buzz = (ms: number): void => {
   }
 };
 
-export const Board = ({ pattern, board, thread, hintCell, hintUntil, solved, locked, onStitch }: Props) => {
+export const Board = ({ pattern, board, thread, hintCell, hintUntil, solved, locked, empty, onStitch }: Props) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const threadRef = useRef<readonly number[]>(thread);
   const props = useRef({ solved, locked, onStitch });
@@ -47,6 +49,7 @@ export const Board = ({ pattern, board, thread, hintCell, hintUntil, solved, loc
     popAt: 0,
     solved,
     reducedMotion: false,
+    empty,
   });
   const refresh = useRef<(layerChanged: boolean) => void>(() => {});
 
@@ -54,13 +57,14 @@ export const Board = ({ pattern, board, thread, hintCell, hintUntil, solved, loc
     props.current = { solved, locked, onStitch };
     live.current.hintCell = hintCell;
     live.current.hintUntil = hintUntil;
+    live.current.empty = empty;
     const solvedChanged = live.current.solved !== solved;
     live.current.solved = solved;
     // Undo, Reset and hints change the thread from outside the board.
     const threadChanged = threadRef.current !== thread;
     threadRef.current = thread;
     refresh.current(threadChanged || solvedChanged);
-  }, [thread, hintCell, hintUntil, solved, locked, onStitch]);
+  }, [thread, hintCell, hintUntil, solved, locked, empty, onStitch]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -69,6 +73,7 @@ export const Board = ({ pattern, board, thread, hintCell, hintUntil, solved, loc
     if (!canvas || !ctx || !box) return;
 
     let geo: Geometry = layout(100, pattern.size);
+    const styles = buttonStyles(pattern);
     let backdrop = document.createElement('canvas');
     let layer = document.createElement('canvas');
     let layerStale = true;
@@ -78,7 +83,7 @@ export const Board = ({ pattern, board, thread, hintCell, hintUntil, solved, loc
     const frame = (now: number) => {
       raf = 0;
       if (layerStale) {
-        layer = drawThreadLayer(geo, board, threadRef.current, live.current.solved);
+        layer = drawThreadLayer(geo, board, styles, threadRef.current, live.current.solved);
         layerStale = false;
       }
       if (drawFrame(ctx, geo, threadRef.current, backdrop, layer, live.current, now)) schedule();
@@ -93,7 +98,8 @@ export const Board = ({ pattern, board, thread, hintCell, hintUntil, solved, loc
 
     const resize = () => {
       const rect = box.getBoundingClientRect();
-      const edge = Math.floor(Math.min(rect.width, rect.height));
+      // A little smaller than the space allows, so the board sits on the page with air round it.
+      const edge = Math.floor(Math.min(rect.width * 0.9, rect.height * 0.96));
       if (edge <= 0) return;
       geo = layout(edge, pattern.size);
       canvas.style.width = `${edge}px`;

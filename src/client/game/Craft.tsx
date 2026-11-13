@@ -1,29 +1,4 @@
-// Small hand-made pieces: the spiral binding, difficulty needles and stitched icons.
-
-import { useId } from 'react';
-
-/** Sketchbook spiral binding along the top of the page. */
-export const Spiral = () => {
-  const id = useId().replace(/:/g, '');
-  return (
-    <svg className="spiral" aria-hidden="true" width="100%" height="30">
-      <defs>
-        <linearGradient id={`${id}w`} x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0" stopColor="#7F8790" />
-          <stop offset="0.45" stopColor="#F3F5F7" />
-          <stop offset="1" stopColor="#6C747D" />
-        </linearGradient>
-        <pattern id={`${id}p`} width="26" height="30" patternUnits="userSpaceOnUse">
-          <ellipse cx="13" cy="23" rx="4.4" ry="3.6" fill="#1E1D22" />
-          <ellipse cx="13" cy="24.6" rx="4.4" ry="2" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1" />
-          <path d="M11 23 C 10.5 13, 15 6, 16.5 -1" fill="none" stroke="rgba(0,0,0,0.18)" strokeWidth="4" strokeLinecap="round" transform="translate(1.2 1.6)" />
-          <path d="M11 23 C 10.5 13, 15 6, 16.5 -1" fill="none" stroke={`url(#${id}w)`} strokeWidth="3.2" strokeLinecap="round" />
-        </pattern>
-      </defs>
-      <rect width="100%" height="30" fill={`url(#${id}p)`} />
-    </svg>
-  );
-};
+// Small hand-made pieces: difficulty needles and stitched icons.
 
 /** One to three sewing needles: the pattern's difficulty. */
 export const Needles = ({ count, label }: { count: number; label: string }) => (
