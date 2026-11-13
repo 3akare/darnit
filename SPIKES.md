@@ -6,21 +6,23 @@ Throwaway app: `spike/` (`darnit-spike`). Installed SDK: `@devvit/web` 0.15.3, D
 
 **Status: blocked.** The spike app was installed in r/DarnItGame on 2026-11-12 at 22:08 UTC
 (v0.0.1.1). About 40 minutes later Reddit reported the owner account as banned or
-suspended, before any row was checked on a device. No Devvit command has been run from the
-cloud session since. Rows marked "pending" are untested.
+suspended. David did get through part of the checklist on his phone first; those results are
+below as he reported them, since the ban stopped the app's own log from being read. No
+Devvit command has been run from the cloud session since. Rows marked "pending" are
+untested, and none of this can be re-run until the account is restored.
 
 ## Results
 
 | # | Spike | Passes when | Result | Evidence |
 | --- | --- | --- | --- | --- |
 | 1 | Devvit CLI login and playtest from a Claude Code cloud session | The test post renders the app | Worked technically, then the account was suspended. Treat as failed | `devvit login --copy-paste` logged in as the app owner and `devvit playtest r/DarnItGame` uploaded, installed and created post `t3_1xuqa0z`, all from the cloud session. Needs `NODE_USE_ENV_PROXY=1`. The account was reported banned or suspended roughly 40 minutes after this login. The cause is not confirmed, but a full-access login from a cloud datacenter address is a plausible trigger |
-| 2 | Clipboard copy on Reddit iOS, Android and desktop | A Copy tap puts the share text on the clipboard | Pending | |
-| 3 | Drag performance in expanded mode on a mid-range Android | 60 fps drawing, page never scrolls | Pending | Headless Chromium only so far: 60 fps, no scroll. Says nothing about a phone |
-| 4 | Scheduler posts at a fixed UTC time | Post appears within a minute of 01:00 UTC | Pending | |
-| 5 | App sets user flair in its subreddit | Flair shows beside the user's name | Pending | |
-| 6 | Comment as the user after consent | Comment appears (from the app owner in playtest) | Pending | |
-| 7 | Bundled font in the webview | The custom font renders | Pending | Font files bundle into `dist/client` and render in headless Chromium |
-| 8 | Push notifications | An opted-in account gets one that opens the post | Pending, expected to fail | Docs: gated beta, and an unpublished app can only notify its own developer |
+| 2 | Clipboard copy on Reddit iOS, Android and desktop | A Copy tap puts the share text on the clipboard | Pass on David's phone. Desktop and the other phone OS untested | David: "clipboard worked". Which of the three methods worked was not recorded |
+| 3 | Drag performance in expanded mode on a mid-range Android | 60 fps drawing, page never scrolls | Pass for speed, on David's phone ("kind of okay"). No fps numbers recovered | The interaction failed: see "From David's drag test" below |
+| 4 | Scheduler posts at a fixed UTC time | Post appears within a minute of 01:00 UTC | Untested | Not checked before the ban |
+| 5 | App sets user flair in its subreddit | Flair shows beside the user's name | Probably pass, not confirmed by eye | David saw a notification after the first tap. Flair beside his name was not checked |
+| 6 | Comment as the user after consent | Comment appears (from the app owner in playtest) | Untested | Not reported |
+| 7 | Bundled font in the webview | The custom font renders | Pass | David: the two sample lines looked different on his phone |
+| 8 | Push notifications | An opted-in account gets one that opens the post | Untested, expected to fail | Docs: gated beta, and an unpublished app can only notify its own developer |
 
 ## What the spike app does for each row
 
@@ -36,7 +38,8 @@ cloud session since. Rows marked "pending" are untested.
 | 8 | Card 5: `notifications.optInCurrentUser`, `isOptedIn`, `enqueue`, `requestShowGameBadge` | Each call's response or error, and whether a notification arrives |
 
 Bonus card 7 shows the player's snoovatar from `context.snoovatar` and from
-`reddit.getSnoovatarUrl`, since the leaderboard depends on it.
+`reddit.getSnoovatarUrl`, since the leaderboard depends on it. Result: neither returned an
+image for an account with no custom avatar.
 
 ## SPEC changes
 
@@ -54,6 +57,13 @@ Bonus card 7 shows the player's snoovatar from `context.snoovatar` and from
 | Not mentioned | Node 24 is required by the template and docs | Add to the agent setup line |
 | Not mentioned | `permissions.journeys: true` must be set in `devvit.json` for Journeys telemetry | Add to the Journeys section |
 | Leaderboard rows show snoovatars | `context.snoovatar` covers the current player only. Other players need `reddit.getSnoovatarUrl(username)`, one call each | Store each solver's snoovatar URL in Redis at solve time and read rows from there |
+
+### From David's drag test
+
+| SPEC.md says | What happened | Change to SPEC.md |
+| --- | --- | --- |
+| "Drag back over the thread to unpick it to that point" | When the thread's head touched any earlier part of the thread, everything after that point was cut. David: "terrible UX" | While dragging, the thread only unpicks one cell at a time, when the finger moves back onto the cell just behind the head. Touching any other part of the thread does nothing. Cutting back to an earlier cell needs a deliberate tap on it |
+| Leaderboard rows and the feed card show snoovatars | Neither `context.snoovatar` nor `reddit.getSnoovatarUrl` returned an image for David's account, which had no custom avatar | Always draw a stitched placeholder avatar in code, and show the snoovatar only when one exists |
 
 ### From the account suspension
 
